@@ -5,6 +5,7 @@
 package io.enmasse.k8s.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.enmasse.address.model.KubeUtil;
 import io.enmasse.address.model.v1.CodecV1;
 import io.enmasse.config.LabelKeys;
 import io.enmasse.config.AnnotationKeys;
@@ -41,26 +42,12 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
     }
 
     @Override
-    public Optional<Address> getAddressWithName(String name) {
+    public Optional<Address> getAddressWithName(String namespace, String name) {
         ConfigMap map = client.configMaps().inNamespace(namespace).withName(name).get();
         if (map == null) {
             return Optional.empty();
         } else {
             return Optional.of(getAddressFromConfig(map));
-        }
-    }
-
-    @Override
-    public Optional<Address> getAddressWithUuid(String uuid) {
-        Map<String, String> labels = new LinkedHashMap<>();
-        labels.put(LabelKeys.TYPE, "address-config");
-        labels.put(LabelKeys.UUID, uuid);
-
-        ConfigMapList list = client.configMaps().inNamespace(namespace).withLabels(labels).list();
-        if (list.getItems().isEmpty()) {
-            return Optional.empty();
-        } else {
-            return Optional.of(getAddressFromConfig(list.getItems().get(0)));
         }
     }
 
@@ -79,12 +66,13 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
     }
 
     @Override
-    public Set<Address> listAddresses() {
+    public Set<Address> listAddresses(String namespace) {
         Map<String, String> labels = new LinkedHashMap<>();
         labels.put(LabelKeys.TYPE, "address-config");
+        labels.put(LabelKeys.NAMESPACE, namespace);
 
         Set<Address> addresses = new LinkedHashSet<>();
-        ConfigMapList list = client.configMaps().inNamespace(namespace).withLabels(labels).list();
+        ConfigMapList list = client.configMaps().inNamespace(this.namespace).withLabels(labels).list();
         for (ConfigMap config : list.getItems()) {
             addresses.add(getAddressFromConfig(config));
         }
@@ -113,14 +101,19 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
         }
     }
 
+    private static String getConfigMapName(String namespace, String name) {
+        return KubeUtil.sanitizeName(namespace + "-" + name);
+    }
+
     private ConfigMap create(Address address) {
-        String name = address.getName();
         ConfigMapBuilder builder = new ConfigMapBuilder()
                 .editOrNewMetadata()
-                .withName(name)
+                .withName(getConfigMapName(address.getNamespace(), address.getName()))
+                .addToLabels(address.getLabels())
                 .addToLabels(LabelKeys.TYPE, "address-config")
+                .addToAnnotations(address.getAnnotations())
                 // TODO: Support other ways of doing this
-                .addToAnnotations(AnnotationKeys.CLUSTER_ID, name)
+                .addToAnnotations(AnnotationKeys.CLUSTER_ID, address.getName())
                 .addToAnnotations(AnnotationKeys.ADDRESS_SPACE, address.getAddressSpace())
                 .endMetadata();
 

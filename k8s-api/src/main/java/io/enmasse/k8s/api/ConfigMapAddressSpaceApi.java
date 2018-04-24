@@ -5,6 +5,7 @@
 package io.enmasse.k8s.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.enmasse.address.model.KubeUtil;
 import io.enmasse.address.model.v1.CodecV1;
 import io.enmasse.config.LabelKeys;
 import io.enmasse.address.model.AddressSpace;
@@ -35,9 +36,14 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
         this.client = client;
     }
 
+    private static String getConfigMapName(String namespace, String name) {
+        return KubeUtil.sanitizeName(namespace + "-" + name);
+    }
+
     @Override
-    public Optional<AddressSpace> getAddressSpaceWithName(String name) {
-        ConfigMap map = client.configMaps().withName(name).get();
+    public Optional<AddressSpace> getAddressSpaceWithName(String namespace, String name) {
+
+        ConfigMap map = client.configMaps().withName(getConfigMapName(namespace, name)).get();
         if (map == null) {
             return Optional.empty();
         } else {
@@ -56,17 +62,6 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
     }
 
     @Override
-    public void createAddressSpaceWithLabels(AddressSpace addressSpace, Map<String, String> labels) throws Exception {
-        try {
-            create(client.configMaps().createNew(), addressSpace, labels);
-        } catch (Exception e) {
-            log.error("Error creating {}", addressSpace.getName());
-            throw e;
-        }
-    }
-
-
-    @Override
     public void replaceAddressSpace(AddressSpace addressSpace) throws Exception {
         String name = addressSpace.getName();
         ConfigMap previous = client.configMaps().withName(name).get();
@@ -74,8 +69,7 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
             return;
         }
         try {
-            create(client.configMaps().createOrReplaceWithNew(), addressSpace,
-                    previous.getMetadata().getLabels());
+            create(client.configMaps().createOrReplaceWithNew(), addressSpace);
         } catch (Exception e) {
             log.error("Error replacing {}", addressSpace.getName());
             throw e;
@@ -83,26 +77,13 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
     }
 
     private void create(DoneableConfigMap config, AddressSpace addressSpace) throws Exception {
+        Map<String, String> labels = new HashMap<>(addressSpace.getLabels());
         String name = addressSpace.getName();
-            config.withNewMetadata()
-                .withName(name)
-                .addToLabels(LabelKeys.TYPE, "address-space")
-                .endMetadata()
-                .addToData("config.json", mapper.writeValueAsString(addressSpace))
-                .done();
-    }
-
-    private void create(DoneableConfigMap config, AddressSpace addressSpace, Map<String, String> labels) throws Exception {
-        String name = addressSpace.getName();
-        if(labels == null) {
-            labels = Collections.singletonMap(LabelKeys.TYPE, "address-space");
-        } else {
-            labels = new HashMap<>(labels);
-            labels.put(LabelKeys.TYPE, "address-space");
-        }
+        labels.put(LabelKeys.TYPE, "address-space");
         config.withNewMetadata()
                 .withName(name)
                 .addToLabels(labels)
+                .addToAnnotations(addressSpace.getAnnotations())
                 .endMetadata()
                 .addToData("config.json", mapper.writeValueAsString(addressSpace))
                 .done();
@@ -115,7 +96,7 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
     }
 
     @Override
-    public Set<AddressSpace> listAddressSpaces() {
+    public Set<AddressSpace> listAddressSpaces(String namespace) {
         Set<AddressSpace> instances = new LinkedHashSet<>();
         for (ConfigMap map : list(new ListOptions()).getItems()) {
             instances.add(getAddressSpaceFromConfig(map));
@@ -124,12 +105,12 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
     }
 
     @Override
-    public Set<AddressSpace> listAddressSpacesWithLabels(Map<String, String> labels) {
+    public Set<AddressSpace> listAddressSpacesWithLabels(String namespace, Map<String, String> labels) {
         Set<AddressSpace> instances = new LinkedHashSet<>();
         labels = new LinkedHashMap<>(labels);
         labels.put(LabelKeys.TYPE, "address-space");
+        labels.put(LabelKeys.NAMESPACE, namespace);
         ConfigMapList list = client.configMaps().withLabels(labels).list();
-        log.info("found {} config maps with labels {}", list.getItems().size(), labels);
         for (ConfigMap map : list.getItems()) {
             instances.add(getAddressSpaceFromConfig(map));
         }
@@ -173,6 +154,14 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
     @Override
     public AddressApi withAddressSpace(AddressSpace addressSpace) {
         return new ConfigMapAddressApi(client, addressSpace.getNamespace());
+    }
+
+    private ConfigMapList list(String namespace) {
+        return client.configMaps()
+                .inNamespace(client.getNamespace())
+                .withLabel(LabelKeys.TYPE, "address-space")
+                .withLabel(LabelKeys.NAMESPACE, namespace)
+                .list();
     }
 
     @Override

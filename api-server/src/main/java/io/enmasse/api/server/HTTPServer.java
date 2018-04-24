@@ -3,21 +3,20 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 
-package io.enmasse.controller;
+package io.enmasse.api.server;
 
 import io.enmasse.api.auth.AllowAllAuthInterceptor;
 import io.enmasse.api.auth.AuthApi;
 import io.enmasse.api.common.JacksonConfig;
 import io.enmasse.api.auth.AuthInterceptor;
 import io.enmasse.api.common.SchemaProvider;
-import io.enmasse.controller.api.v1.http.SwaggerSpecEndpoint;
-import io.enmasse.controller.api.v1.http.HttpAddressService;
-import io.enmasse.controller.api.v1.http.HttpAddressSpaceService;
-import io.enmasse.controller.api.v1.http.HttpHealthService;
-import io.enmasse.controller.api.v1.http.HttpSchemaService;
-import io.enmasse.controller.api.v1.http.*;
+import io.enmasse.api.v1.http.SwaggerSpecEndpoint;
+import io.enmasse.api.v1.http.HttpAddressService;
+import io.enmasse.api.v1.http.HttpAddressSpaceService;
+import io.enmasse.api.v1.http.HttpHealthService;
+import io.enmasse.api.v1.http.HttpSchemaService;
+import io.enmasse.api.v1.http.*;
 import io.enmasse.api.common.DefaultExceptionMapper;
-import io.enmasse.controller.common.AuthenticationServiceResolverFactory;
 import io.enmasse.k8s.api.AddressSpaceApi;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -78,9 +77,8 @@ public class HTTPServer extends AbstractVerticle {
         deployment.getRegistry().addSingletonResource(new HttpSchemaService(schemaProvider));
         deployment.getRegistry().addSingletonResource(new HttpAddressSpaceService(addressSpaceApi, schemaProvider, authApi.getNamespace()));
         deployment.getRegistry().addSingletonResource(new HttpHealthService());
-        deployment.getRegistry().addSingletonResource(new HttpV1RootService());
         deployment.getRegistry().addSingletonResource(new HttpRootService());
-        deployment.getRegistry().addSingletonResource(new HttpAddressRootService(addressSpaceApi));
+        deployment.getRegistry().addSingletonResource(new HttpApiRootService());
 
         VertxRequestHandler requestHandler = new VertxRequestHandler(vertx, deployment);
 

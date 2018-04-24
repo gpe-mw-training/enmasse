@@ -3,7 +3,7 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 
-package io.enmasse.controller.api.v1;
+package io.enmasse.api.v1;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;

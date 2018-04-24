@@ -2,7 +2,7 @@
  * Copyright 2017-2018, EnMasse authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.enmasse.controller.api.v1.http;
+package io.enmasse.api.v1.http;
 
 import io.enmasse.address.model.AddressSpace;
 import io.enmasse.address.model.AddressSpaceList;
@@ -26,7 +26,7 @@ import java.util.concurrent.Callable;
 @Path(HttpAddressSpaceService.BASE_URI)
 public class HttpAddressSpaceService {
 
-    static final String BASE_URI = "/apis/enmasse.io/v1/addressspaces";
+    static final String BASE_URI = "/apis/enmasse.io/v1/namespaces/{namespace}/addressspaces";
 
     private static final Logger log = LoggerFactory.getLogger(HttpAddressSpaceService.class.getName());
     private final String namespace;
@@ -58,17 +58,17 @@ public class HttpAddressSpaceService {
 
     @GET
     @Produces({MediaType.APPLICATION_JSON})
-    public Response getAddressSpaceList(@Context SecurityContext securityContext) throws Exception {
+    public Response getAddressSpaceList(@Context SecurityContext securityContext, @PathParam("namespace") String namespace) throws Exception {
         return doRequest(securityContext, ResourceVerb.list, "Error getting address space list", () ->
-                Response.ok(new AddressSpaceList(addressSpaceApi.listAddressSpaces())).build());
+                Response.ok(new AddressSpaceList(addressSpaceApi.listAddressSpaces(namespace))).build());
     }
 
     @GET
     @Produces({MediaType.APPLICATION_JSON})
     @Path("{addressSpace}")
-    public Response getAddressSpace(@Context SecurityContext securityContext, @PathParam("addressSpace") String addressSpaceName) throws Exception {
+    public Response getAddressSpace(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @PathParam("addressSpace") String addressSpaceName) throws Exception {
         return doRequest(securityContext, ResourceVerb.get, "Error getting address space " + addressSpaceName, () ->
-            addressSpaceApi.getAddressSpaceWithName(addressSpaceName)
+            addressSpaceApi.getAddressSpaceWithName(namespace, addressSpaceName)
                     .map(addressSpace -> Response.ok(addressSpace).build())
                     .orElseThrow(() -> new NotFoundException("Address space " + addressSpaceName + " not found")));
     }
@@ -76,7 +76,7 @@ public class HttpAddressSpaceService {
     @POST
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response createAddressSpace(@Context SecurityContext securityContext, @NotNull  AddressSpace input) throws Exception {
+    public Response createAddressSpace(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @NotNull  AddressSpace input) throws Exception {
         return doRequest(securityContext, ResourceVerb.create, "Error creating address space " + input.getName(), () -> {
 
             AddressSpaceResolver addressSpaceResolver = new AddressSpaceResolver(schemaProvider.getSchema());
@@ -89,16 +89,16 @@ public class HttpAddressSpaceService {
                         .build();
             }
             addressSpaceApi.createAddressSpace(addressSpace);
-            return Response.ok(new AddressSpaceList(addressSpaceApi.listAddressSpaces())).build();
+            return Response.ok(new AddressSpaceList(addressSpaceApi.listAddressSpaces(namespace))).build();
         });
     }
 
     @DELETE
     @Path("{addressSpace}")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response deleteAddressSpace(@Context SecurityContext securityContext, @PathParam("addressSpace") String addressSpaceName) throws Exception {
+    public Response deleteAddressSpace(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @PathParam("addressSpace") String addressSpaceName) throws Exception {
         return doRequest(securityContext, ResourceVerb.delete, "Error deleting address space " + addressSpaceName, () -> {
-            AddressSpace addressSpace = addressSpaceApi.getAddressSpaceWithName(addressSpaceName)
+            AddressSpace addressSpace = addressSpaceApi.getAddressSpaceWithName(namespace, addressSpaceName)
                     .orElseThrow(() -> new NotFoundException("Unable to find address space " + addressSpaceName));
             addressSpaceApi.deleteAddressSpace(addressSpace);
             return Response.ok(addressSpace).build();

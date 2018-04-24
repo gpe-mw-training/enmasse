@@ -13,6 +13,8 @@ public class AddressSpace {
     private final String name;
     private final String namespace;
     private final String typeName;
+    private final Map<String, String> labels;
+    private final Map<String, String> annotations;
     private final List<Endpoint> endpointList;
     private final String planName;
     private final AuthenticationService authenticationService;
@@ -21,7 +23,7 @@ public class AddressSpace {
     private final String createdBy;
     private final String createdByUid;
 
-    private AddressSpace(String name, String namespace, String typeName, List<Endpoint> endpointList, String planName, AuthenticationService authenticationService, Status status, String uid, String createdBy, String createdByUid) {
+    private AddressSpace(String name, String namespace, String typeName, List<Endpoint> endpointList, String planName, AuthenticationService authenticationService, Status status, String uid, String createdBy, String createdByUid, Map<String, String> labels, Map<String, String> annotations) {
         this.name = name;
         this.namespace = namespace;
         this.typeName = typeName;
@@ -32,6 +34,8 @@ public class AddressSpace {
         this.uid = uid;
         this.createdBy = createdBy;
         this.createdByUid = createdByUid;
+        this.labels = labels;
+        this.annotations = annotations;
     }
 
     public String getName() {
@@ -71,6 +75,14 @@ public class AddressSpace {
 
     public String getCreatedByUid() {
         return createdByUid;
+    }
+
+    public Map<String, String> getAnnotations() {
+        return annotations;
+    }
+
+    public Map<String, String> getLabels() {
+        return labels;
     }
 
     @Override
@@ -114,6 +126,8 @@ public class AddressSpace {
         private String uid;
         private String createdBy;
         private String createdByUid;
+        private Map<String, String> labels = new HashMap<>();
+        private Map<String, String> annotations = new HashMap<>();
 
         public Builder() {
         }
@@ -133,13 +147,12 @@ public class AddressSpace {
             this.uid = addressSpace.getUid();
             this.createdBy = addressSpace.getCreatedBy();
             this.createdByUid = addressSpace.getCreatedByUid();
+            this.labels = new HashMap<>(addressSpace.getLabels());
+            this.annotations = new HashMap<>(addressSpace.getAnnotations());
         }
 
         public Builder setName(String name) {
             this.name = name;
-            if (this.namespace == null) {
-                this.namespace = "enmasse-" + name;
-            }
             return this;
         }
 
@@ -197,13 +210,33 @@ public class AddressSpace {
             return this;
         }
 
+        public Builder setAnnotations(Map<String, String> annotations) {
+            this.annotations = new HashMap<>(annotations);
+            return this;
+        }
+
+        public Builder putAnnotation(String key, String value) {
+            this.annotations.put(key, value);
+            return this;
+        }
+
+        public Builder setLabels(Map<String, String> labels) {
+            this.labels = new HashMap<>(labels);
+            return this;
+        }
+
+        public Builder putLabel(String key, String value) {
+            this.labels.put(key, value);
+            return this;
+        }
+
         public AddressSpace build() {
             Objects.requireNonNull(name, "name not set");
             Objects.requireNonNull(namespace, "namespace not set");
             Objects.requireNonNull(type, "type not set");
             Objects.requireNonNull(authenticationService, "authentication service not set");
             Objects.requireNonNull(status, "status not set");
-            return new AddressSpace(name, namespace, type, endpointList, plan, authenticationService, status, uid, createdBy, createdByUid);
+            return new AddressSpace(name, namespace, type, endpointList, plan, authenticationService, status, uid, createdBy, createdByUid, labels, annotations);
         }
 
         public String getNamespace() {

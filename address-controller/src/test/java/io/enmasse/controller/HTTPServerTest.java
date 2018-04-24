@@ -24,7 +24,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.net.URI;
 import java.util.UUID;
 
 import static org.mockito.Matchers.any;
@@ -147,7 +146,7 @@ public class HTTPServerTest {
     }
 
     @Test
-    public void testDiscoverability(TestContext context) throws InterruptedException {
+    public void testApiResources(TestContext context) throws InterruptedException {
         HttpClient client = vertx.createHttpClient();
         try {
             {
@@ -155,23 +154,11 @@ public class HTTPServerTest {
                 HttpClientRequest rootReq = client.get(8080, "localhost", "/apis/enmasse.io/v1", response -> {
                     context.assertEquals(200, response.statusCode());
                     response.bodyHandler(buffer -> {
-                        JsonArray data = buffer.toJsonArray();
-                        String entry = data.getString(0);
-                        if (!entry.contains("addressspaces")) {
-                            entry = data.getString(1);
-                        }
-                        URI uri = URI.create(entry);
-                        HttpClientRequest request = client.get(uri.getPort(), uri.getHost(), uri.getPath(), nestedResponse -> {
-                            context.assertEquals(200, nestedResponse.statusCode());
-                            nestedResponse.bodyHandler(buffer2 -> {
-                                JsonObject space = buffer2.toJsonObject();
-                                System.out.println(space.toString());
-                                context.assertEquals("AddressSpaceList", space.getString("kind"));
-                                context.assertTrue(space.containsKey("items"));
-                                async.complete();
-                            });
-                        });
-                        putAuthzToken(request).end();;
+                        JsonObject data = buffer.toJsonObject();
+                        context.assertTrue(data.containsKey("resources"));
+                        JsonArray resources = data.getJsonArray("resources");
+                        context.assertEquals(2, resources.size());
+                        async.complete();
                     });
                 });
                 putAuthzToken(rootReq);

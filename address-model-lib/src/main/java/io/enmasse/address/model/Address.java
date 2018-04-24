@@ -12,6 +12,7 @@ import java.util.*;
  */
 public class Address {
     private final String name;
+    private final String namespace;
     private final String uuid;
     private final String address;
     private final String addressSpace;
@@ -19,10 +20,12 @@ public class Address {
     private final String plan;
     private final Status status;
     private final String version;
+    private final Map<String, String> labels;
     private final Map<String, String> annotations;
 
-    private Address(String name, String uuid, String address, String addressSpace, String type, String plan, Status status, String version, Map<String, String> annotations) {
+    private Address(String name, String namespace, String uuid, String address, String addressSpace, String type, String plan, Status status, String version, Map<String, String> labels, Map<String, String> annotations) {
         this.name = name;
+        this.namespace = namespace;
         this.uuid = uuid;
         this.address = address;
         this.addressSpace = addressSpace;
@@ -30,6 +33,7 @@ public class Address {
         this.plan = plan;
         this.status = status;
         this.version = version;
+        this.labels = labels;
         this.annotations = annotations;
     }
 
@@ -39,6 +43,10 @@ public class Address {
 
     public String getName() {
         return name;
+    }
+
+    public String getNamespace() {
+        return namespace;
     }
 
     public String getUuid() {
@@ -69,6 +77,10 @@ public class Address {
         return annotations;
     }
 
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -85,6 +97,7 @@ public class Address {
 
     public void validate() {
         Objects.requireNonNull(name, "name not set");
+        Objects.requireNonNull(namespace, "name not set");
         Objects.requireNonNull(address, "address not set");
         Objects.requireNonNull(addressSpace, "addressSpace not set");
         Objects.requireNonNull(plan, "plan not set");
@@ -99,16 +112,19 @@ public class Address {
 
         Address address1 = (Address) o;
 
-        return address.equals(address1.address);
+        return address.equals(address1.address) &&
+                addressSpace.equals(address1.addressSpace) &&
+                namespace.equals(address1.namespace);
     }
 
     @Override
     public int hashCode() {
-        return address.hashCode();
+        return Objects.hash(address, addressSpace, namespace);
     }
 
     public static class Builder {
         private String name;
+        private String namespace;
         private String uuid;
         private String address;
         private String addressSpace;
@@ -116,6 +132,7 @@ public class Address {
         private String plan;
         private Status status = new Status(false);
         private String version;
+        private Map<String, String> labels = new HashMap<>();
         private Map<String, String> annotations = new HashMap<>();
 
         public Builder() {
@@ -130,6 +147,7 @@ public class Address {
             this.plan = address.getPlan();
             this.status = new Status(address.getStatus());
             this.version = address.getVersion();
+            this.labels = new HashMap<>(address.getLabels());
             this.annotations = new HashMap<>(address.getAnnotations());
         }
 
@@ -140,6 +158,11 @@ public class Address {
 
         public Builder setName(String name) {
             this.name = KubeUtil.sanitizeName(name);
+            return this;
+        }
+
+        public Builder setNamespace(String namespace) {
+            this.namespace = namespace;
             return this;
         }
 
@@ -160,6 +183,16 @@ public class Address {
 
         public Builder putAnnotation(String key, String value) {
             this.annotations.put(key, value);
+            return this;
+        }
+
+        public Builder setLabels(Map<String, String> labels) {
+            this.labels = new HashMap<>(labels);
+            return this;
+        }
+
+        public Builder putLabel(String key, String value) {
+            this.labels.put(key, value);
             return this;
         }
 
@@ -185,8 +218,11 @@ public class Address {
 
         public Address build() {
             Objects.requireNonNull(address, "address not set");
+            Objects.requireNonNull(addressSpace, "addressSpace not set");
+            Objects.requireNonNull(namespace, "namespace not set");
             Objects.requireNonNull(type, "type not set");
             Objects.requireNonNull(status, "status not set");
+            Objects.requireNonNull(labels, "labels not set");
             Objects.requireNonNull(annotations, "annotations not set");
             if (uuid == null) {
                 uuid = UUID.nameUUIDFromBytes(address.getBytes(StandardCharsets.UTF_8)).toString();
@@ -194,7 +230,7 @@ public class Address {
             if (name == null) {
                 name = KubeUtil.sanitizeWithUuid(address, uuid);
             }
-            return new Address(name, uuid, address, addressSpace, type, plan, status, version, annotations);
+            return new Address(name, namespace, uuid, address, addressSpace, type, plan, status, version, labels, annotations);
         }
     }
 }

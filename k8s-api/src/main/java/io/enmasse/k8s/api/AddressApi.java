@@ -14,9 +14,8 @@ import java.util.Set;
  * API for managing addresses in kubernetes.
  */
 public interface AddressApi {
-    Optional<Address> getAddressWithName(String name);
-    Optional<Address> getAddressWithUuid(String uuid);
-    Set<Address> listAddresses();
+    Optional<Address> getAddressWithName(String namespace, String name);
+    Set<Address> listAddresses(String namespace);
 
     void createAddress(Address address);
     void replaceAddress(Address address);

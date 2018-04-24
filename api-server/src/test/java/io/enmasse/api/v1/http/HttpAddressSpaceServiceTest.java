@@ -2,7 +2,7 @@
  * Copyright 2018, EnMasse authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.enmasse.controller.api.v1.http;
+package io.enmasse.api.v1.http;
 
 import io.enmasse.address.model.AddressSpace;
 import io.enmasse.address.model.AddressSpaceList;
@@ -11,7 +11,6 @@ import io.enmasse.api.auth.RbacSecurityContext;
 import io.enmasse.controller.TestSchemaProvider;
 import io.enmasse.api.common.DefaultExceptionMapper;
 import io.enmasse.k8s.api.TestAddressSpaceApi;
-import org.apache.http.auth.BasicUserPrincipal;
 import org.junit.Before;
 import org.junit.Test;
 

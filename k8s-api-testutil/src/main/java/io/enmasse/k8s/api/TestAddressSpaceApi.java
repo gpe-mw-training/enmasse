@@ -19,7 +19,7 @@ public class TestAddressSpaceApi implements AddressSpaceApi {
     public boolean throwException = false;
 
     @Override
-    public Optional<AddressSpace> getAddressSpaceWithName(String addressSpaceId) {
+    public Optional<AddressSpace> getAddressSpaceWithName(String namespace, String addressSpaceId) {
         if (throwException) {
             throw new RuntimeException("foo");
         }
@@ -32,11 +32,6 @@ public class TestAddressSpaceApi implements AddressSpaceApi {
             throw new RuntimeException("foo");
         }
         addressSpaces.put(addressSpace.getName(), addressSpace);
-    }
-
-    @Override
-    public void createAddressSpaceWithLabels(AddressSpace addressSpace, Map<String, String> labels) throws Exception {
-
     }
 
     @Override
@@ -53,7 +48,7 @@ public class TestAddressSpaceApi implements AddressSpaceApi {
     }
 
     @Override
-    public Set<AddressSpace> listAddressSpaces() {
+    public Set<AddressSpace> listAddressSpaces(String namespace) {
         if (throwException) {
             throw new RuntimeException("foo");
         }
@@ -61,7 +56,7 @@ public class TestAddressSpaceApi implements AddressSpaceApi {
     }
 
     @Override
-    public Set<AddressSpace> listAddressSpacesWithLabels(Map<String, String> labels) {
+    public Set<AddressSpace> listAddressSpacesWithLabels(String namespace, Map<String, String> labels) {
         return null;
     }
 
