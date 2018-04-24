@@ -67,7 +67,7 @@ spec:
               key: recheckInterval
               name: address-controller-config
               optional: true
-        image: docker.io/enmasseproject/address-controller:latest
+        image: docker.io/lulf/address-controller:latest
         livenessProbe:
           httpGet:
             path: /healthz

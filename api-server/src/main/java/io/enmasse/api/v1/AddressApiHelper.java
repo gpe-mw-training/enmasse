@@ -4,7 +4,6 @@
  */
 package io.enmasse.api.v1;
 
-import java.io.IOException;
 import java.util.*;
 
 import javax.ws.rs.BadRequestException;
@@ -35,107 +34,68 @@ public class AddressApiHelper {
         this.schemaProvider = schemaProvider;
     }
 
-    private void verifyAuthorized(SecurityContext securityContext, AddressSpace addressSpace, ResourceVerb verb) {
-        if (!securityContext.isUserInRole(RbacSecurityContext.rbacToRole(addressSpace.getNamespace(), verb))) {
-            throw Exceptions.notAuthorizedException();
+    public AddressList getAddresses(String namespace) {
+        AddressList list = new AddressList();
+        for (AddressSpace addressSpace : addressSpaceApi.listAddressSpaces(namespace)) {
+            list.addAll(addressSpaceApi.withAddressSpace(addressSpace).listAddresses(namespace));
         }
+        return list;
     }
 
-    public AddressList getAddresses(SecurityContext securityContext, String namespace) {
-        AddressList addressList = new AddressList();
-        Set<AddressSpace> addressSpaceList = addressSpaceApi.listAddressSpaces(namespace);
-        for (AddressSpace addressSpace : addressSpaceList) {
-            if (securityContext.isUserInRole(RbacSecurityContext.rbacToRole(addressSpace.getNamespace(), ResourceVerb.list))) {
-                addressList.addAll(addressSpaceApi.withAddressSpace(addressSpace).listAddresses());
-            }
-        }
-        return addressList;
-    }
-
-    public AddressList putAddresses(SecurityContext securityContext, String addressSpaceId, AddressList addressList) throws Exception {
-        AddressSpace addressSpace = getAddressSpace(addressSpaceId);
-        verifyAuthorized(securityContext, addressSpace, ResourceVerb.create);
-        validateAddresses(addressSpace, addressList);
-        AddressApi addressApi = addressSpaceApi.withAddressSpace(addressSpace);
-
-        Set<Address> toRemove = new HashSet<>(addressApi.listAddresses());
-        toRemove.removeAll(addressList);
-        toRemove.forEach(addressApi::deleteAddress);
-        addressList.forEach(addressApi::createAddress);
-        return new AddressList(addressApi.listAddresses());
-    }
-
-    private void validateAddresses(AddressSpace addressSpace, AddressList addressList) {
+    private void validateAddress(AddressSpace addressSpace, Address address) {
         Schema schema = schemaProvider.getSchema();
         AddressSpaceType type = schema.findAddressSpaceType(addressSpace.getType()).orElseThrow(() -> new UnresolvedAddressSpaceException("Unable to resolve address space type " + addressSpace.getType()));
 
         AddressResolver addressResolver = new AddressResolver(schema, type);
-        Set<Address> existingAddresses = addressSpaceApi.withAddressSpace(addressSpace).listAddresses();
-        for (Address address : addressList) {
-            addressResolver.validate(address);
-            for (Address existing : existingAddresses) {
-                if (address.getAddress().equals(existing.getAddress()) && !address.getName().equals(existing.getName())) {
-                    throw new BadRequestException("Address '" + address.getAddress() + "' already exists with resource name '" + existing.getName() + "'");
-                }
-            }
-
-            for (Address b : addressList) {
-                if (address.getAddress().equals(b.getAddress()) && !address.getName().equals(b.getName())) {
-                    throw new BadRequestException("Address '" + address.getAddress() + "' defined in resource names '" + address.getName() + "' and '" + b.getName() + "'");
-                }
+        Set<Address> existingAddresses = addressSpaceApi.withAddressSpace(addressSpace).listAddresses(address.getNamespace());
+        addressResolver.validate(address);
+        for (Address existing : existingAddresses) {
+            if (address.getAddress().equals(existing.getAddress()) && !address.getName().equals(existing.getName())) {
+                throw new BadRequestException("Address '" + address.getAddress() + "' already exists with resource name '" + existing.getName() + "'");
             }
         }
     }
 
-    private AddressSpace getAddressSpace(String addressSpaceId) throws Exception {
-        return addressSpaceApi.getAddressSpaceWithName(addressSpaceId)
+    private AddressSpace getAddressSpace(String namespace, String addressSpaceId) throws Exception {
+        return addressSpaceApi.getAddressSpaceWithName(namespace, addressSpaceId)
                 .orElseThrow(() -> new NotFoundException("Address space " + addressSpaceId + " not found"));
     }
 
-    public Optional<Address> getAddress(SecurityContext securityContext, String namespace, String address) throws Exception {
+    public Optional<Address> getAddress(String namespace, String address) throws Exception {
         for (AddressSpace addressSpace : addressSpaceApi.listAddressSpaces(namespace)) {
-            verifyAuthorized(securityContext, addressSpace, ResourceVerb.get);
-            Optional<Address> object = addressSpaceApi.withAddressSpace(addressSpace).getAddressWithName(address);
-
-    }
-
-    public AddressList deleteAddress(SecurityContext securityContext, String addressSpaceId, String name) throws Exception {
-        AddressSpace addressSpace = getAddressSpace(addressSpaceId);
-        verifyAuthorized(securityContext, addressSpace, ResourceVerb.delete);
-        AddressApi addressApi = addressSpaceApi.withAddressSpace(addressSpace);
-        addressApi.getAddressWithName(name).ifPresent(addressApi::deleteAddress);
-        return new AddressList(addressApi.listAddresses());
-    }
-
-    public AddressList appendAddresses(SecurityContext securityContext, AddressList addressList) throws Exception {
-        Map<String, AddressList> perAddressSpaceList = new HashMap<>();
-        for (Address address : addressList) {
-            if (address.getAddressSpace() == null) {
-                throw new BadRequestException("Address '" + address.getAddress() + "' is missing addressSpace");
+            Optional<Address> object = addressSpaceApi.withAddressSpace(addressSpace).getAddressWithName(namespace, address);
+            if (object.isPresent()) {
+                return object;
             }
-            AddressList perList = perAddressSpaceList.get(address.getAddressSpace());
-            if (perList == null) {
-                perList = new AddressList();
-                perAddressSpaceList.put(address.getAddressSpace(), perList);
+        }
+        return Optional.empty();
+    }
+
+    public void deleteAddress(String namespace, String name) throws Exception {
+        for (AddressSpace addressSpace : addressSpaceApi.listAddressSpaces(namespace)) {
+            AddressApi addressApi = addressSpaceApi.withAddressSpace(addressSpace);
+            for (Address address : addressApi.listAddresses(namespace)) {
+                if (address.getNamespace().equals(namespace) && address.getName().equals(name)) {
+                    addressApi.deleteAddress(address);
+                    return;
+                }
             }
-            perList.add(address);
         }
-
-        for (Map.Entry<String, AddressList> entry : perAddressSpaceList.entrySet()) {
-            appendAddresses(securityContext, entry.getKey(), entry.getValue());
-        }
-        return addressList;
     }
 
-    public AddressList appendAddresses(SecurityContext securityContext, String addressSpaceId, AddressList addressList) throws Exception {
-        AddressSpace addressSpace = getAddressSpace(addressSpaceId);
-        verifyAuthorized(securityContext, addressSpace, ResourceVerb.create);
-        validateAddresses(addressSpace, addressList);
+    public Address createAddress(Address address) throws Exception {
+        AddressSpace addressSpace = getAddressSpace(address.getNamespace(), address.getAddressSpace());
+        validateAddress(addressSpace, address);
         AddressApi addressApi = addressSpaceApi.withAddressSpace(addressSpace);
-        for (Address address : addressList) {
-            addressApi.createAddress(address);
-        }
-        return new AddressList(addressApi.listAddresses());
+        addressApi.createAddress(address);
+        return address;
     }
 
+    public Address replaceAddress(Address address) throws Exception {
+        AddressSpace addressSpace = getAddressSpace(address.getNamespace(), address.getAddressSpace());
+        validateAddress(addressSpace, address);
+        AddressApi addressApi = addressSpaceApi.withAddressSpace(addressSpace);
+        addressApi.replaceAddress(address);
+        return address;
+    }
 }

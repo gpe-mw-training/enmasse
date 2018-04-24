@@ -97,7 +97,7 @@ public class Address {
 
     public void validate() {
         Objects.requireNonNull(name, "name not set");
-        Objects.requireNonNull(namespace, "name not set");
+        Objects.requireNonNull(namespace, "namespace not set");
         Objects.requireNonNull(address, "address not set");
         Objects.requireNonNull(addressSpace, "addressSpace not set");
         Objects.requireNonNull(plan, "plan not set");
@@ -140,6 +140,7 @@ public class Address {
 
         public Builder(io.enmasse.address.model.Address address) {
             this.name = address.getName();
+            this.namespace = address.getNamespace();
             this.uuid = address.getUuid();
             this.address = address.getAddress();
             this.addressSpace = address.getAddressSpace();
@@ -219,7 +220,6 @@ public class Address {
         public Address build() {
             Objects.requireNonNull(address, "address not set");
             Objects.requireNonNull(addressSpace, "addressSpace not set");
-            Objects.requireNonNull(namespace, "namespace not set");
             Objects.requireNonNull(type, "type not set");
             Objects.requireNonNull(status, "status not set");
             Objects.requireNonNull(labels, "labels not set");

@@ -232,7 +232,6 @@ public class AddressSpace {
 
         public AddressSpace build() {
             Objects.requireNonNull(name, "name not set");
-            Objects.requireNonNull(namespace, "namespace not set");
             Objects.requireNonNull(type, "type not set");
             Objects.requireNonNull(authenticationService, "authentication service not set");
             Objects.requireNonNull(status, "status not set");

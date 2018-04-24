@@ -23,7 +23,7 @@ import java.util.Set;
 import io.enmasse.address.model.Address;
 import io.enmasse.address.model.AddressList;
 import io.enmasse.address.model.AddressSpace;
-import io.enmasse.controller.TestSchemaProvider;
+import io.enmasse.api.server.TestSchemaProvider;
 import io.enmasse.k8s.api.AddressApi;
 import io.enmasse.k8s.api.AddressSpaceApi;
 import org.apache.http.auth.BasicUserPrincipal;
@@ -49,54 +49,34 @@ public class AddressApiHelperTest {
         securityContext = mock(SecurityContext.class);
         when(securityContext.getUserPrincipal()).thenReturn(new BasicUserPrincipal("me"));
         when(securityContext.isUserInRole(any())).thenReturn(true);
-        when(addressSpaceApi.getAddressSpaceWithName(eq("test"))).thenReturn(Optional.of(addressSpace));
+        when(addressSpaceApi.getAddressSpaceWithName(any(), eq("test"))).thenReturn(Optional.of(addressSpace));
         when(addressSpaceApi.withAddressSpace(eq(addressSpace))).thenReturn(addressApi);
         helper = new AddressApiHelper(addressSpaceApi, new TestSchemaProvider());
     }
 
     @Test
     public void testPutAddresses() throws Exception {
-        final Set<Address> addresses = new HashSet<>();
-        when(addressApi.listAddresses()).thenReturn(Collections.singleton(createAddress("q1")));
-        addresses.add(createAddress("q1"));
-        addresses.add(createAddress("q2"));
-        helper.putAddresses(securityContext,"test", new AddressList(addresses));
+        when(addressApi.listAddresses(any())).thenReturn(Collections.singleton(createAddress("q1")));
+        helper.replaceAddress(createAddress("q1"));
         verify(addressApi, never()).deleteAddress(any());
-        verify(addressApi).createAddress(eq(createAddress("q2")));
+        verify(addressApi).replaceAddress(eq(createAddress("q1")));
     }
 
     @Test
     public void testDuplicateAddresses() throws Exception {
-        when(addressApi.listAddresses()).thenReturn(Sets.newSet(createAddress("q1"), createAddress("q2")));
+        when(addressApi.listAddresses(any())).thenReturn(Sets.newSet(createAddress("q1"), createAddress("q2")));
 
-        AddressList newAddresses = new AddressList();
-        newAddresses.add(createAddress("q3", "q1"));
         try {
-            helper.putAddresses(securityContext, "test", newAddresses);
+            helper.createAddress(createAddress("q3", "q1"));
             fail("Expected exception for duplicate address");
         } catch (BadRequestException e) {
             assertThat(e.getMessage(), is("Address 'q1' already exists with resource name 'q1'"));
         }
     }
 
-    @Test
-    public void testDuplicateAddressesInRequest() throws Exception {
-        when(addressApi.listAddresses()).thenReturn(Collections.emptySet());
-
-        AddressList newAddresses = new AddressList();
-        newAddresses.add(createAddress("q1", "q1"));
-        newAddresses.add(createAddress("q2", "q1"));
-        try {
-            helper.putAddresses(securityContext, "test", newAddresses);
-            fail("Expected exception for duplicate address");
-        } catch (BadRequestException e) {
-            assertThat(e.getMessage(), is("Address 'q1' defined in resource names 'q1' and 'q2'"));
-        }
-    }
-
     private Address createAddress(String name, String address)
     {
-        return new Address.Builder().setName(name).setAddress(address).setAddressSpace("test").setType("queue").setPlan("plan1").build();
+        return new Address.Builder().setName(name).setNamespace("ns").setAddress(address).setAddressSpace("test").setType("queue").setPlan("plan1").build();
     }
 
     private Address createAddress(String address)

@@ -15,11 +15,9 @@ import java.util.Optional;
 public class ApiServerOptions {
     private static final String SERVICEACCOUNT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount";
     private String namespace;
-    private String apiToken;
-    private String impersonateUser;
     private String certDir;
-    private boolean enableRbac;
     private Duration resyncInterval;
+    private String clientCa;
 
     public String getNamespace() {
         return namespace;
@@ -29,36 +27,12 @@ public class ApiServerOptions {
         this.namespace = namespace;
     }
 
-    public String getApiToken() {
-        return apiToken;
-    }
-
-    public void setApiToken(String apiToken) {
-        this.apiToken = apiToken;
-    }
-
-    public String getImpersonateUser() {
-        return impersonateUser;
-    }
-
-    public void setImpersonateUser(String impersonateUser) {
-        this.impersonateUser = impersonateUser;
-    }
-
     public String getCertDir() {
         return certDir;
     }
 
     public void setCertDir(String certDir) {
         this.certDir = certDir;
-    }
-
-    public boolean isEnableRbac() {
-        return enableRbac;
-    }
-
-    public void setEnableRbac(boolean enableRbac) {
-        this.enableRbac = enableRbac;
     }
 
     public Duration getResyncInterval() {
@@ -76,18 +50,13 @@ public class ApiServerOptions {
         options.setNamespace(getEnv(env, "NAMESPACE")
                 .orElseGet(() -> readFile(new File(SERVICEACCOUNT_PATH, "namespace"))));
 
-        options.setApiToken(getEnv(env, "TOKEN")
-                .orElseGet(() -> readFile(new File(SERVICEACCOUNT_PATH, "token"))));
-
         options.setCertDir(getEnv(env, "CERT_DIR").orElse("/api-server-cert"));
 
-        options.setEnableRbac(getEnv(env, "ENABLE_RBAC").map(Boolean::parseBoolean).orElse(false));
+        options.setClientCa(getEnv(env, "CLIENT_CA").orElse(null));
 
         options.setResyncInterval(getEnv(env, "RESYNC_INTERVAL")
                 .map(i -> Duration.ofSeconds(Long.parseLong(i)))
                 .orElse(Duration.ofMinutes(5)));
-
-        options.setImpersonateUser(getEnv(env, "IMPERSONATE_USER").orElse(null));
 
         return options;
     }
@@ -102,5 +71,13 @@ public class ApiServerOptions {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public void setClientCa(String clientCa) {
+        this.clientCa = clientCa;
+    }
+
+    public String getClientCa() {
+        return clientCa;
     }
 }

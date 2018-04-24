@@ -16,7 +16,7 @@
         "groupPriorityMinimum": 1000,
         "versionPriority": 15,
         "service": {
-          "name": "address-controller",
+          "name": "api-server",
           "namespace": "${ENMASSE_NAMESPACE}"
         }
       }

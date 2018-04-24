@@ -63,6 +63,28 @@ class AddressSpaceV1Deserializer extends JsonDeserializer<AddressSpace> {
             builder.setCreatedByUid(metadata.get(Fields.CREATED_BY_UID).asText());
         }
 
+        if (metadata.hasNonNull(Fields.LABELS)) {
+            ObjectNode labelObject = metadata.with(Fields.LABELS);
+            Iterator<String> labelIt = labelObject.fieldNames();
+            while (labelIt.hasNext()) {
+                String key = labelIt.next();
+                if (labelObject.get(key).isTextual()) {
+                    builder.putLabel(key, labelObject.get(key).asText());
+                }
+            }
+        }
+
+        if (metadata.hasNonNull(Fields.ANNOTATIONS)) {
+            ObjectNode annotationObject = metadata.with(Fields.ANNOTATIONS);
+            Iterator<String> annotationIt = annotationObject.fieldNames();
+            while (annotationIt.hasNext()) {
+                String key = annotationIt.next();
+                if (annotationObject.get(key).isTextual()) {
+                    builder.putAnnotation(key, annotationObject.get(key).asText());
+                }
+            }
+        }
+
         if (spec.hasNonNull(Fields.ENDPOINTS)) {
             ArrayNode endpoints = (ArrayNode) spec.get(Fields.ENDPOINTS);
             for (int i = 0; i < endpoints.size(); i++) {

@@ -7,7 +7,6 @@ package io.enmasse.k8s.api;
 import io.enmasse.address.model.Address;
 import io.enmasse.address.model.AddressSpace;
 import io.enmasse.address.model.Status;
-import io.enmasse.k8s.api.cache.Store;
 
 import java.time.Duration;
 import java.util.*;
@@ -76,16 +75,6 @@ public class TestAddressSpaceApi implements AddressSpaceApi {
 
     public TestAddressApi getAddressApi(String id) {
         return addressApiMap.get(id);
-    }
-
-    public Set<Address> getAddresses() {
-        return getAddressApis().stream()
-                .flatMap(d -> d.listAddresses().stream())
-                .collect(Collectors.toSet());
-    }
-
-    public Set<String> getAddressUuids() {
-        return getAddresses().stream().map(d -> d.getUuid()).collect(Collectors.toSet());
     }
 
     public Collection<TestAddressApi> getAddressApis() {

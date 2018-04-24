@@ -51,7 +51,7 @@ spec:
           value: /service-broker-cert
         - name: LISTEN_PORT
           value: '8443'
-        image: docker.io/enmasseproject/service-broker:latest
+        image: docker.io/lulf/service-broker:latest
         livenessProbe:
           httpGet:
             path: /healthz

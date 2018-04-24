@@ -3,7 +3,7 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 
-package io.enmasse.controller;
+package io.enmasse.api.server;
 
 import io.enmasse.address.model.*;
 import io.enmasse.api.auth.AuthApi;
@@ -51,7 +51,7 @@ public class HTTPServerTest {
         when(authApi.performTokenReview(eq("mytoken"))).thenReturn(new TokenReview("foo", "myid", true));
         when(authApi.performSubjectAccessReview(eq("foo"), any(), any())).thenReturn(new SubjectAccessReview("foo", true));
         when(authApi.performSubjectAccessReview(eq("foo"), any(), any())).thenReturn(new SubjectAccessReview("foo", true));
-        vertx.deployVerticle(new HTTPServer(instanceApi, new TestSchemaProvider(),"/doesnotexist", authApi, true), context.asyncAssertSuccess());
+        vertx.deployVerticle(new HTTPServer(instanceApi, new TestSchemaProvider(),"/doesnotexist", null), context.asyncAssertSuccess());
     }
 
     @After
@@ -80,6 +80,7 @@ public class HTTPServerTest {
                     .setAddressSpace("myinstance")
                 .setName("addr1")
                 .setAddress("addR1")
+                .setNamespace("ns")
                 .setType("queue")
                 .setPlan("myplan")
                 .setUuid(UUID.randomUUID().toString())
@@ -88,7 +89,7 @@ public class HTTPServerTest {
         HttpClient client = vertx.createHttpClient();
         Async async = context.async(4);
         try {
-            HttpClientRequest r1 = client.get(8080, "localhost", "/apis/enmasse.io/v1/addresses/myinstance", response -> {
+            HttpClientRequest r1 = client.get(8080, "localhost", "/apis/enmasse.io/v1/namespaces/ns/addresses", response -> {
                 context.assertEquals(200, response.statusCode());
                 response.bodyHandler(buffer -> {
                     JsonObject data = buffer.toJsonObject();
@@ -100,7 +101,7 @@ public class HTTPServerTest {
             putAuthzToken(r1);
             r1.end();
 
-            HttpClientRequest r2 = client.get(8080, "localhost", "/apis/enmasse.io/v1/addresses/myinstance/addr1", response -> {
+            HttpClientRequest r2 = client.get(8080, "localhost", "/apis/enmasse.io/v1/namespaces/ns/addresses/addr1", response -> {
                 response.bodyHandler(buffer -> {
                     JsonObject data = buffer.toJsonObject();
                     System.out.println(data);

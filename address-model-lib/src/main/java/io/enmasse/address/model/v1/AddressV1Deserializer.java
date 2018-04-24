@@ -47,12 +47,27 @@ class AddressV1Deserializer extends JsonDeserializer<Address> {
                 builder.setName(metadata.get(Fields.NAME).asText());
             }
 
+            if (metadata.hasNonNull(Fields.NAMESPACE)) {
+                builder.setNamespace(metadata.get(Fields.NAMESPACE).asText());
+            }
+
             if (metadata.hasNonNull(Fields.ADDRESS_SPACE)) {
                 builder.setAddressSpace(metadata.get(Fields.ADDRESS_SPACE).asText());
             }
 
             if (metadata.hasNonNull(Fields.UUID)) {
                 builder.setUuid(metadata.get(Fields.UUID).asText());
+            }
+
+            if (metadata.hasNonNull(Fields.LABELS)) {
+                ObjectNode labelObject = metadata.with(Fields.LABELS);
+                Iterator<String> labelIt = labelObject.fieldNames();
+                while (labelIt.hasNext()) {
+                    String key = labelIt.next();
+                    if (labelObject.get(key).isTextual()) {
+                        builder.putLabel(key, labelObject.get(key).asText());
+                    }
+                }
             }
 
             if (metadata.hasNonNull(Fields.ANNOTATIONS)) {

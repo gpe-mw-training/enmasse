@@ -4,7 +4,6 @@
  */
 package io.enmasse.api.v1.http;
 
-import io.enmasse.address.model.v1.Either;
 import io.enmasse.api.common.Exceptions;
 import io.enmasse.api.common.SchemaProvider;
 import io.enmasse.api.v1.AddressApiHelper;
@@ -16,10 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.*;
 import java.util.concurrent.Callable;
 
 /**
@@ -46,9 +42,9 @@ public class HttpAddressService {
     @GET
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response getAddressList(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @QueryParam("address") String address) throws Exception {
+    public Response getAddressList(@PathParam("namespace") String namespace, @QueryParam("address") String address) throws Exception {
         return doRequest("Error listing addresses",() -> {
-            AddressList list = apiHelper.getAddresses(securityContext, namespace);
+            AddressList list = apiHelper.getAddresses(namespace);
             if (address == null) {
                 return Response.ok(list).build();
             } else {
@@ -66,9 +62,9 @@ public class HttpAddressService {
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
     @Path("{addressName}")
-    public Response getAddress(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @PathParam("addressName") String address) throws Exception {
+    public Response getAddress(@PathParam("namespace") String namespace, @PathParam("addressName") String address) throws Exception {
         return doRequest("Error getting address",
-                () -> Response.ok(apiHelper.getAddress(securityContext, namespace, address)
+                () -> Response.ok(apiHelper.getAddress(namespace, address)
                         .orElseThrow(() -> Exceptions.notFoundException("Address " + address + " not found")))
                         .build());
     }
@@ -76,44 +72,19 @@ public class HttpAddressService {
     @POST
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response appendAddress(@Context SecurityContext securityContext, @NotNull Either<Address, AddressList> body) throws Exception {
-        checkNotNull(body);
-        if (body.isLeft()) {
-            AddressList list = new AddressList();
-            list.add(body.getLeft());
-            return appendAddresses(securityContext, list, null);
-        } else {
-            return appendAddresses(securityContext, body.getRight(), null);
+    public Response createAddress(@Context UriInfo uriInfo, @PathParam("namespace") String namespace, @NotNull Address address) throws Exception {
+        checkNotNull(address);
+        if (address.getNamespace() == null) {
+            address = new Address.Builder(address)
+                    .setNamespace(namespace)
+                    .build();
         }
-    }
-
-    @POST
-    @Produces({MediaType.APPLICATION_JSON})
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Path("{addressSpace}")
-    public Response appendAddress(@Context SecurityContext securityContext, @PathParam("addressSpace") String addressSpaceName, @NotNull Either<Address, AddressList> body) throws Exception {
-        checkNotNull(body);
-        if (body.isLeft()) {
-            AddressList list = new AddressList();
-            list.add(body.getLeft());
-            return appendAddresses(securityContext, list, addressSpaceName);
-        } else {
-            return appendAddresses(securityContext, body.getRight(), addressSpaceName);
-        }
-    }
-
-    private Response appendAddresses(@Context SecurityContext securityContext, AddressList list, String addressSpaceName) throws Exception {
-        checkNotNull(list);
-        return doRequest("Error appending addresses", () -> {
-            AddressList addressList = list;
-            if (addressSpaceName != null) {
-                addressList = setAddressSpace(addressSpaceName, addressList);
-                verifyAddressSpace(addressSpaceName, addressList);
-                addressList = apiHelper.appendAddresses(securityContext, addressSpaceName, addressList);
-            } else {
-                addressList = apiHelper.appendAddresses(securityContext, addressList);
-            }
-            return Response.ok(addressList).build();
+        Address finalAddress = address;
+        return doRequest("Error creating address", () -> {
+            Address created = apiHelper.createAddress(finalAddress);
+            UriBuilder builder = uriInfo.getAbsolutePathBuilder();
+            builder.path(created.getName());
+            return Response.created(builder.build()).entity(created).build();
         });
     }
 
@@ -123,69 +94,31 @@ public class HttpAddressService {
         }
     }
 
-    private void verifyAddressSpace(String addressSpaceName, AddressList addressList) {
-        for (Address address : addressList) {
-            if (!address.getAddressSpace().equals(addressSpaceName)) {
-                throw new IllegalArgumentException("Address space of " + address + " does not match address space in url: " + addressSpaceName);
-            }
-        }
-    }
-
-    private AddressList setAddressSpace(String addressSpaceName, AddressList addressList) {
-        AddressList list = new AddressList();
-        for (Address address : addressList) {
-            if (address.getAddressSpace() == null) {
-                Address.Builder ab = new Address.Builder(address);
-                ab.setAddressSpace(addressSpaceName);
-                list.add(ab.build());
-            } else {
-                list.add(address);
-            }
-        }
-        return list;
-    }
-
     @PUT
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
-    @Path("{addressSpace}")
-    public Response replaceAddresses(@Context SecurityContext securityContext, @PathParam("addressSpace") String addressSpaceName, @NotNull  AddressList list) throws Exception {
-        checkNotNull(list);
-        return doRequest("Error updating addresses", () -> {
-            AddressList addressList = setAddressSpace(addressSpaceName, list);
-            verifyAddressSpace(addressSpaceName, addressList);
-            AddressList addresses = apiHelper.putAddresses(securityContext, addressSpaceName, addressList);
-            return Response.ok(addresses).build();
-        });
-    }
-
-    //@PUT
-    //@Produces({MediaType.APPLICATION_JSON})
-    //@Consumes({MediaType.APPLICATION_JSON})
-    //@Path("{address}")
-    //public Response putAddress(@PathParam("addressSpace") String addressSpaceName, @PathParam("address") String address, Address body) {
-    //    throw new NotImplementedYetException();
-    //}
-
-    @DELETE
-    @Produces({MediaType.APPLICATION_JSON})
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Path("{addressSpace}")
-    public Response deleteAllAddresses(@Context SecurityContext securityContext, @PathParam("addressSpace") String addressSpaceName) throws Exception {
-        return doRequest("Error deleting addresses", () -> {
-            AddressList addresses = apiHelper.putAddresses(securityContext, addressSpaceName, new AddressList());
-            return Response.ok(addresses).build();
+    public Response replaceAddresses(@PathParam("namespace") String namespace, @NotNull Address address) throws Exception {
+        checkNotNull(address);
+        if (address.getNamespace() == null) {
+            address = new Address.Builder(address)
+                    .setNamespace(namespace)
+                    .build();
+        }
+        Address finalAddress = address;
+        return doRequest("Error updating address", () -> {
+            Address replaced = apiHelper.replaceAddress(finalAddress);
+            return Response.ok(replaced).build();
         });
     }
 
     @DELETE
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
-    @Path("{addressSpace}/{address}")
-    public Response deleteAddress(@Context SecurityContext securityContext, @PathParam("addressSpace") String addressSpaceName, @PathParam("address") String address) throws Exception {
+    @Path("{addressName}")
+    public Response deleteAddress(@PathParam("namespace") String namespace, @PathParam("addressName") String addressName) throws Exception {
         return doRequest("Error deleting address", () -> {
-            AddressList addresses = apiHelper.deleteAddress(securityContext, addressSpaceName, address);
-            return Response.ok(addresses).build();
+            apiHelper.deleteAddress(namespace, addressName);
+            return Response.ok().build();
         });
     }
 }

@@ -43,12 +43,14 @@ public class AddressTest {
     public void testSanitizer() {
         Address b1 = new Address.Builder()
                 .setAddress("myAddr_-")
+                .setAddressSpace("myspace")
                 .setPlan("p1")
                 .setType("t1")
                 .build();
 
         Address b2 = new Address.Builder()
                 .setAddress(b1.getAddress())
+                .setAddressSpace("myspace")
                 .setName(b1.getName())
                 .setPlan(b1.getPlan())
                 .setType(b1.getType())
@@ -67,6 +69,8 @@ public class AddressTest {
                 .setAddress("a1")
                 .setPlan("p1")
                 .setType("t1")
+                .setNamespace("ns")
+                .setAddressSpace("myspace")
                 .setStatus(new Status(true).setPhase(Status.Phase.Active).appendMessage("foo"))
                 .build();
         

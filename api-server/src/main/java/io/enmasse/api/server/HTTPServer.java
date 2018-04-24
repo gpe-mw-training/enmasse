@@ -5,25 +5,20 @@
 
 package io.enmasse.api.server;
 
-import io.enmasse.api.auth.AllowAllAuthInterceptor;
-import io.enmasse.api.auth.AuthApi;
-import io.enmasse.api.common.JacksonConfig;
-import io.enmasse.api.auth.AuthInterceptor;
-import io.enmasse.api.common.SchemaProvider;
-import io.enmasse.api.v1.http.SwaggerSpecEndpoint;
-import io.enmasse.api.v1.http.HttpAddressService;
-import io.enmasse.api.v1.http.HttpAddressSpaceService;
-import io.enmasse.api.v1.http.HttpHealthService;
-import io.enmasse.api.v1.http.HttpSchemaService;
-import io.enmasse.api.v1.http.*;
 import io.enmasse.api.common.DefaultExceptionMapper;
+import io.enmasse.api.common.JacksonConfig;
+import io.enmasse.api.common.SchemaProvider;
+import io.enmasse.api.v1.http.*;
 import io.enmasse.k8s.api.AddressSpaceApi;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
 import org.jboss.resteasy.plugins.server.vertx.VertxRequestHandler;
 import org.jboss.resteasy.plugins.server.vertx.VertxResteasyDeployment;
 import org.slf4j.Logger;
@@ -36,24 +31,21 @@ import java.io.File;
  */
 public class HTTPServer extends AbstractVerticle {
     public static final int PORT = 8080;
-    public static final int SECURE_PORT = 8081;
+    public static final int SECURE_PORT = 8443;
     private static final Logger log = LoggerFactory.getLogger(HTTPServer.class.getName());
     private final AddressSpaceApi addressSpaceApi;
     private final SchemaProvider schemaProvider;
     private final String certDir;
-    private final AuthApi authApi;
-    private final boolean enableRbac;
+    private final String clientCa;
 
     private HttpServer httpServer;
     private HttpServer httpsServer;
 
-    public HTTPServer(AddressSpaceApi addressSpaceApi, SchemaProvider schemaProvider, String certDir,
-                      AuthApi authApi, boolean enableRbac) {
+    public HTTPServer(AddressSpaceApi addressSpaceApi, SchemaProvider schemaProvider, String certDir, String clientCa) {
         this.addressSpaceApi = addressSpaceApi;
         this.schemaProvider = schemaProvider;
         this.certDir = certDir;
-        this.authApi = authApi;
-        this.enableRbac = enableRbac;
+        this.clientCa = clientCa;
     }
 
     @Override
@@ -64,18 +56,10 @@ public class HTTPServer extends AbstractVerticle {
         deployment.getProviderFactory().registerProvider(DefaultExceptionMapper.class);
         deployment.getProviderFactory().registerProvider(JacksonConfig.class);
 
-        if (enableRbac) {
-            log.info("Enabling RBAC for REST API");
-            deployment.getProviderFactory().registerProviderInstance(new AuthInterceptor(authApi, HttpHealthService.BASE_URI));
-        } else {
-            log.info("Disabling authentication and authorization for REST API");
-            deployment.getProviderFactory().registerProviderInstance(new AllowAllAuthInterceptor());
-        }
-
         deployment.getRegistry().addSingletonResource(new SwaggerSpecEndpoint());
         deployment.getRegistry().addSingletonResource(new HttpAddressService(addressSpaceApi, schemaProvider));
         deployment.getRegistry().addSingletonResource(new HttpSchemaService(schemaProvider));
-        deployment.getRegistry().addSingletonResource(new HttpAddressSpaceService(addressSpaceApi, schemaProvider, authApi.getNamespace()));
+        deployment.getRegistry().addSingletonResource(new HttpAddressSpaceService(addressSpaceApi, schemaProvider));
         deployment.getRegistry().addSingletonResource(new HttpHealthService());
         deployment.getRegistry().addSingletonResource(new HttpRootService());
         deployment.getRegistry().addSingletonResource(new HttpApiRootService());
@@ -117,6 +101,12 @@ public class HTTPServer extends AbstractVerticle {
                     .setKeyPath(keyFile.getAbsolutePath())
                     .setCertPath(certFile.getAbsolutePath()));
             options.setSsl(true);
+
+            if (clientCa != null) {
+                options.setPemTrustOptions(new PemTrustOptions()
+                        .addCertValue(Buffer.buffer(clientCa)));
+                options.setClientAuth(ClientAuth.REQUIRED);
+            }
 
             httpsServer = vertx.createHttpServer(options)
                     .requestHandler(requestHandler)

@@ -27,6 +27,7 @@ public class SerializationTest {
                 .setName("a1")
                 .setAddress("addr1")
                 .setAddressSpace("as1")
+                .setNamespace("ns")
                 .setType("queue")
                 .setPlan("inmemory")
                 .setUuid(uuid)
@@ -52,6 +53,7 @@ public class SerializationTest {
         Address addr1 = new Address.Builder()
                 .setAddress("addr1")
                 .setAddressSpace("a1")
+                .setNamespace("ns")
                 .setType("queue")
                 .setPlan("myplan")
                 .build();
@@ -60,6 +62,7 @@ public class SerializationTest {
                 .setName("a2")
                 .setAddressSpace("a1")
                 .setAddress("addr2")
+                .setNamespace("ns")
                 .setType("anycast")
                 .setPlan("myplan")
                 .build();

@@ -46,7 +46,7 @@ spec:
             secretKeyRef:
               key: tls.crt
               name: standard-authservice-cert
-        image: docker.io/enmasseproject/keycloak-controller:latest
+        image: docker.io/lulf/keycloak-controller:latest
         name: keycloak-controller
         resources:
           limits:

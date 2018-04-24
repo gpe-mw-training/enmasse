@@ -39,6 +39,20 @@ class AddressSpaceV1Serializer extends JsonSerializer<AddressSpace> {
         metadata.put(Fields.NAME, addressSpace.getName());
         metadata.put(Fields.NAMESPACE, addressSpace.getNamespace());
 
+        if (!addressSpace.getLabels().isEmpty()) {
+            ObjectNode labels = metadata.putObject(Fields.LABELS);
+            for (Map.Entry<String, String> entry : addressSpace.getLabels().entrySet()) {
+                labels.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        if (!addressSpace.getAnnotations().isEmpty()) {
+            ObjectNode annotations = metadata.putObject(Fields.ANNOTATIONS);
+            for (Map.Entry<String, String> entry : addressSpace.getAnnotations().entrySet()) {
+                annotations.put(entry.getKey(), entry.getValue());
+            }
+        }
+
         if (addressSpace.getCreatedBy() != null) {
             metadata.put(Fields.CREATED_BY, addressSpace.getCreatedBy());
         }

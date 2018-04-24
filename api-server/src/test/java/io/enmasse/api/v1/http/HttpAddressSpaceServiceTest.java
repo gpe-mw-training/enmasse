@@ -8,9 +8,10 @@ import io.enmasse.address.model.AddressSpace;
 import io.enmasse.address.model.AddressSpaceList;
 import io.enmasse.address.model.Endpoint;
 import io.enmasse.api.auth.RbacSecurityContext;
-import io.enmasse.controller.TestSchemaProvider;
 import io.enmasse.api.common.DefaultExceptionMapper;
+import io.enmasse.api.server.TestSchemaProvider;
 import io.enmasse.k8s.api.TestAddressSpaceApi;
+import org.jboss.resteasy.spi.ResteasyUriInfo;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,16 +33,11 @@ public class HttpAddressSpaceServiceTest {
     private AddressSpace a1;
     private AddressSpace a2;
     private DefaultExceptionMapper exceptionMapper = new DefaultExceptionMapper();
-    private SecurityContext securityContext;
 
     @Before
     public void setup() {
         addressSpaceApi = new TestAddressSpaceApi();
-        addressSpaceService = new HttpAddressSpaceService(addressSpaceApi, new TestSchemaProvider(),"controller");
-        securityContext = mock(SecurityContext.class);
-        when(securityContext.getUserPrincipal()).thenReturn(RbacSecurityContext.getUserPrincipal("me", "myid"));
-        when(securityContext.isUserInRole(any())).thenReturn(true);
-        when(securityContext.getAuthenticationScheme()).thenReturn("unknown");
+        addressSpaceService = new HttpAddressSpaceService(addressSpaceApi, new TestSchemaProvider());
         a1 = new AddressSpace.Builder()
                 .setName("a1")
                 .setNamespace("myspace")
@@ -80,7 +76,7 @@ public class HttpAddressSpaceServiceTest {
     public void testList() {
         addressSpaceApi.createAddressSpace(a1);
         addressSpaceApi.createAddressSpace(a2);
-        Response response = invoke(() -> addressSpaceService.getAddressSpaceList(securityContext));
+        Response response = invoke(() -> addressSpaceService.getAddressSpaceList(null));
         assertThat(response.getStatus(), is(200));
         AddressSpaceList data = (AddressSpaceList) response.getEntity();
 
@@ -92,14 +88,14 @@ public class HttpAddressSpaceServiceTest {
     @Test
     public void testListException() {
         addressSpaceApi.throwException = true;
-        Response response = invoke(() -> addressSpaceService.getAddressSpaceList(securityContext));
+        Response response = invoke(() -> addressSpaceService.getAddressSpaceList(null));
         assertThat(response.getStatus(), is(500));
     }
 
     @Test
     public void testGet() {
         addressSpaceApi.createAddressSpace(a1);
-        Response response = invoke(() -> addressSpaceService.getAddressSpace(securityContext,"a1"));
+        Response response = invoke(() -> addressSpaceService.getAddressSpace(null, "a1"));
         assertThat(response.getStatus(), is(200));
         AddressSpace data = ((AddressSpace)response.getEntity());
 
@@ -110,28 +106,28 @@ public class HttpAddressSpaceServiceTest {
     @Test
     public void testGetException() {
         addressSpaceApi.throwException = true;
-        Response response = invoke(() -> addressSpaceService.getAddressSpace(securityContext,"a1"));
+        Response response = invoke(() -> addressSpaceService.getAddressSpace(null,"a1"));
         assertThat(response.getStatus(), is(500));
     }
 
     @Test
     public void testGetUnknown() {
-        Response response = invoke(() -> addressSpaceService.getAddressSpace(securityContext,"doesnotexist"));
+        Response response = invoke(() -> addressSpaceService.getAddressSpace(null,"doesnotexist"));
         assertThat(response.getStatus(), is(404));
     }
 
     @Test
     public void testCreate() {
-        Response response = invoke(() -> addressSpaceService.createAddressSpace(securityContext, a1));
-        assertThat(response.getStatus(), is(200));
+        Response response = invoke(() -> addressSpaceService.createAddressSpace(new ResteasyUriInfo("https://localhost:8443/foo", null, "/"), null, a1));
+        assertThat(response.getStatus(), is(201));
 
-        assertThat(addressSpaceApi.listAddressSpaces(), hasItem(a1));
+        assertThat(addressSpaceApi.listAddressSpaces(null), hasItem(a1));
     }
 
     @Test
     public void testCreateException() {
         addressSpaceApi.throwException = true;
-        Response response = invoke(() -> addressSpaceService.createAddressSpace(securityContext, a1));
+        Response response = invoke(() -> addressSpaceService.createAddressSpace(new ResteasyUriInfo("https://localhost:8443/foo", null, "/"), null, a1));
         assertThat(response.getStatus(), is(500));
     }
 
@@ -140,43 +136,25 @@ public class HttpAddressSpaceServiceTest {
         addressSpaceApi.createAddressSpace(a1);
         addressSpaceApi.createAddressSpace(a2);
 
-        Response response = invoke(() -> addressSpaceService.deleteAddressSpace(securityContext,"a1"));
+        Response response = invoke(() -> addressSpaceService.deleteAddressSpace(null,"a1"));
         assertThat(response.getStatus(), is(200));
 
-        assertThat(addressSpaceApi.listAddressSpaces(), hasItem(a2));
-        assertThat(addressSpaceApi.listAddressSpaces().size(), is(1));
+        assertThat(addressSpaceApi.listAddressSpaces(null), hasItem(a2));
+        assertThat(addressSpaceApi.listAddressSpaces(null).size(), is(1));
     }
 
     @Test
     public void testDeleteException() {
         addressSpaceApi.createAddressSpace(a1);
         addressSpaceApi.throwException = true;
-        Response response = invoke(() -> addressSpaceService.deleteAddressSpace(securityContext,"a1"));
+        Response response = invoke(() -> addressSpaceService.deleteAddressSpace(null,"a1"));
         assertThat(response.getStatus(), is(500));
     }
 
     @Test
     public void testDeleteNotFound() {
         addressSpaceApi.createAddressSpace(a1);
-        Response response = invoke(() -> addressSpaceService.deleteAddressSpace(securityContext,"doesnotexist"));
+        Response response = invoke(() -> addressSpaceService.deleteAddressSpace(null,"doesnotexist"));
         assertThat(response.getStatus(), is(404));
-    }
-
-    @Test
-    public void testUnauthorized() {
-        when(securityContext.isUserInRole(any())).thenReturn(false);
-
-        Response response = invoke(() -> addressSpaceService.deleteAddressSpace(securityContext,"doesnotexist"));
-        assertThat(response.getStatus(), is(401));
-
-        addressSpaceApi.createAddressSpace(a1);
-        response = invoke(() -> addressSpaceService.getAddressSpace(securityContext,"a1"));
-        assertThat(response.getStatus(), is(401));
-
-        response = invoke(() -> addressSpaceService.getAddressSpaceList(securityContext));
-        assertThat(response.getStatus(), is(401));
-
-        response = invoke(() -> addressSpaceService.createAddressSpace(securityContext, a1));
-        assertThat(response.getStatus(), is(401));
     }
 }

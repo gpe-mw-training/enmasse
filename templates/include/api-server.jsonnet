@@ -1,0 +1,112 @@
+local images = import "images.jsonnet";
+{
+  service::
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "name": "api-server",
+      "labels": {
+        "app": "enmasse",
+        "component": "api-server"
+      },
+      "annotations": {
+        "service.alpha.openshift.io/serving-cert-secret-name": "api-server-cert"
+      }
+    },
+    "spec": {
+      "ports": [
+        {
+          "name": "https",
+          "port": 443,
+          "protocol": "TCP",
+          "targetPort": "https"
+        }
+      ],
+      "selector": {
+        "component": "api-server"
+      },
+      "type": "ClusterIP"
+    }
+  },
+
+  deployment::
+  {
+    "apiVersion": "extensions/v1beta1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "api-server",
+      "labels": {
+        "component": "api-server",
+        "app": "enmasse"
+      }
+    },
+    "spec": {
+      "replicas": 1,
+      "template": {
+        "metadata": {
+          "labels": {
+            "component": "api-server",
+            "app": "enmasse"
+          }
+        },
+        "spec": {
+          "serviceAccount": "enmasse-admin",
+          "containers": [
+            {
+              "name": "api-server",
+              "image": images.api_server,
+              "volumeMounts": [
+                {
+                  "name": "api-server-cert",
+                  "mountPath": "/api-server-cert",
+                  "readOnly": true
+                }
+              ],
+              "env": [
+                {
+                  "name": "CLIENT_CA",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "name": "api-server-secret",
+                      "key": "clientCa.pem"
+                    }
+                  }
+                },
+                {
+                  "name": "CERT_DIR",
+                  "value": "/api-server-cert"
+                }
+              ],
+              "ports": [
+                {
+                  "name": "http",
+                  "containerPort": 8080
+                },
+                {
+                  "name": "https",
+                  "containerPort": 8443
+                }
+              ],
+              "livenessProbe": {
+                "httpGet": {
+                  "path": "/healthz",
+                  "scheme": "HTTP",
+                  "port": "http"
+                }
+              }
+            }
+          ],
+          "volumes": [
+            {
+              "name": "api-server-cert",
+              "secret": {
+                "secretName": "api-server-cert"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

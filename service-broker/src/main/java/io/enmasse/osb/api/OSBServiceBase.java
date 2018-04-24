@@ -30,6 +30,8 @@ public abstract class OSBServiceBase {
     private final AddressSpaceApi addressSpaceApi;
     private final AuthApi authApi;
     private final SchemaProvider schemaProvider;
+    // TODO: Make configurable
+    private final String namespace = "enmasse";
 
     public OSBServiceBase(AddressSpaceApi addressSpaceApi, AuthApi authApi, SchemaProvider schemaProvider) {
         this.addressSpaceApi = addressSpaceApi;
@@ -54,11 +56,11 @@ public abstract class OSBServiceBase {
 
 
     protected Optional<AddressSpace> findAddressSpaceByInstanceId(String serviceInstanceId) {
-        return addressSpaceApi.listAddressSpacesWithLabels(Collections.singletonMap(LabelKeys.SERVICE_INSTANCE_ID, serviceInstanceId)).stream().findAny();
+        return addressSpaceApi.listAddressSpacesWithLabels(namespace, Collections.singletonMap(LabelKeys.SERVICE_INSTANCE_ID, serviceInstanceId)).stream().findAny();
     }
 
     protected Optional<AddressSpace> findAddressSpaceByName(String name) {
-        return addressSpaceApi.listAddressSpaces().stream().filter(a -> a.getName().equals(name)).findAny();
+        return addressSpaceApi.listAddressSpaces(namespace).stream().filter(a -> a.getName().equals(name)).findAny();
     }
 
     protected AddressSpace createAddressSpace(String instanceId, String name, String type, String plan, String userId, String userName) throws Exception {
@@ -73,9 +75,10 @@ public abstract class OSBServiceBase {
                 .setCreatedBy(userName)
                 .setCreatedByUid(userId)
                 .setAuthenticationService(authService)
+                .putLabel(LabelKeys.SERVICE_INSTANCE_ID, instanceId)
                 .setEndpointList(null)
                 .build();
-        addressSpaceApi.createAddressSpaceWithLabels(addressSpace, Collections.singletonMap(LabelKeys.SERVICE_INSTANCE_ID, instanceId));
+        addressSpaceApi.createAddressSpace(addressSpace);
         log.info("Created MaaS addressspace {}", addressSpace.getName());
         return addressSpace;
     }

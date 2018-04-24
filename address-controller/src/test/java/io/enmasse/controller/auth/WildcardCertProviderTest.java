@@ -40,6 +40,7 @@ public class WildcardCertProviderTest {
 
         AddressSpace space = new AddressSpace.Builder()
                 .setName("myspace")
+                .setNamespace("ns")
                 .setType("standard")
                 .build();
 
