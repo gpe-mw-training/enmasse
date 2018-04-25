@@ -42,13 +42,17 @@ A new component named `api-server` will be introduced. The name is chose due to 
 concept being called `extension api server`. The api-server component will provide the following
 REST API methods and resource urls:
 
+```
 GET /apis/enmasse.io/v1/namespaces/[:namespace]/addressspaces[?labelSelector=...]
 POST /apis/enmasse.io/v1/namespaces/[:namespace]/addressspaces
 PUT/DELETE /apis/enmasse.io/v1/namespaces/[:namespace]/addressspaces/[:addressSpace]
+```
 
+```
 GET /apis/enmasse.io/v1/namespaces/[:namespace]/addresses[?labelSelector=...]
 POST /apis/enmasse.io/v1/namespaces/[:namespace]/addresses
 PUT/DELETE /apis/enmasse.io/v1/namespaces/[:namespace]/addresses/[:address]
+```
 
 The namespace in the above urls refer to the 'project namespace' of the user. Since the kubernetes
 API server uses RBAC, this will allow address spaces used by different projects to be isolated from
