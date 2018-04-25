@@ -64,7 +64,9 @@ public class Main extends AbstractVerticle {
         controllerChain.addController(new EndpointController(controllerClient));
         controllerChain.addController(authController);
 
-        deployVerticles(startPromise, new Deployment(controllerChain));
+        HTTPServer httpServer = new HTTPServer(8080);
+
+        deployVerticles(startPromise, new Deployment(controllerChain), new Deployment(httpServer));
     }
 
     private CertProviderFactory createCertProviderFactory(ControllerOptions options, CertManager certManager) {

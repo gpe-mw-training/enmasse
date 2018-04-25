@@ -22,7 +22,10 @@ public class AddressTest {
                 .setType("queue")
                 .setPlan("myplan")
                 .setStatus(new Status(true))
-                .setUuid("myuuid");
+                .setUid("myuuid")
+                .setResourceVersion("1234")
+                .setSelfLink("/my/link")
+                .setCreationTimestamp("my stamp");
 
         Address a1 = b1.build();
 
@@ -36,7 +39,10 @@ public class AddressTest {
         assertThat(a1.getPlan(), is(a2.getPlan()));
         assertThat(a1.getStatus(), is(a2.getStatus()));
         assertThat(a1.getType(), is(a2.getType()));
-        assertThat(a1.getUuid(), is(a2.getUuid()));
+        assertThat(a1.getUid(), is(a2.getUid()));
+        assertThat(a1.getResourceVersion(), is(a2.getResourceVersion()));
+        assertThat(a1.getSelfLink(), is(a2.getSelfLink()));
+        assertThat(a1.getCreationTimestamp(), is(a2.getCreationTimestamp()));
     }
 
     @Test

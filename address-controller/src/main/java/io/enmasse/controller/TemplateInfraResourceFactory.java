@@ -6,6 +6,7 @@ package io.enmasse.controller;
 
 import io.enmasse.address.model.*;
 import io.enmasse.api.common.SchemaProvider;
+import io.enmasse.config.AnnotationKeys;
 import io.enmasse.controller.common.AuthenticationServiceResolverFactory;
 import io.enmasse.controller.common.Kubernetes;
 import io.enmasse.controller.common.TemplateParameter;
@@ -133,7 +134,7 @@ public class TemplateInfraResourceFactory implements InfraResourceFactory {
                         break;
                     }
                 }
-                HasMetadata item = kubernetes.createEndpoint(endpoint, service, addressSpace.getName(), addressSpace.getNamespace());
+                HasMetadata item = kubernetes.createEndpoint(endpoint, service, addressSpace.getName(), addressSpace.getAnnotation(AnnotationKeys.NAMESPACE));
                 if (item != null) {
                     resourceList.add(item);
                 }

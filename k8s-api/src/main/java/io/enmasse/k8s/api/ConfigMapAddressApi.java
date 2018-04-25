@@ -5,7 +5,6 @@
 package io.enmasse.k8s.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.enmasse.address.model.KubeUtil;
 import io.enmasse.address.model.v1.CodecV1;
 import io.enmasse.config.LabelKeys;
 import io.enmasse.config.AnnotationKeys;
@@ -43,7 +42,7 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
 
     @Override
     public Optional<Address> getAddressWithName(String namespace, String name) {
-        ConfigMap map = client.configMaps().inNamespace(namespace).withName(name).get();
+        ConfigMap map = client.configMaps().inNamespace(this.namespace).withName(getConfigMapName(namespace, name)).get();
         if (map == null) {
             return Optional.empty();
         } else {
@@ -56,8 +55,12 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
         Map<String, String> data = configMap.getData();
 
         try {
-            Address.Builder builder = new Address.Builder(mapper.readValue(data.get("config.json"), Address.class));
-            builder.setVersion(configMap.getMetadata().getResourceVersion());
+            Address address = mapper.readValue(data.get("config.json"), Address.class);
+            Address.Builder builder = new Address.Builder(address);
+            builder.setResourceVersion(configMap.getMetadata().getResourceVersion());
+            builder.setCreationTimestamp(configMap.getMetadata().getCreationTimestamp());
+            builder.setUid(configMap.getMetadata().getUid());
+            builder.setSelfLink("/apis/enmasse.io/v1/namespaces/" + address.getNamespace() + "/addresses/" + address.getName());
             return builder.build();
         } catch (Exception e) {
             log.warn("Unable to decode address", e);
@@ -67,21 +70,28 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
 
     @Override
     public Set<Address> listAddresses(String namespace) {
-        Map<String, String> labels = new LinkedHashMap<>();
+        return listAddressesWithLabels(namespace, Collections.emptyMap());
+    }
+
+    @Override
+    public Set<Address> listAddressesWithLabels(String namespace, Map<String, String> labelSelector) {
+        Map<String, String> labels = new LinkedHashMap<>(labelSelector);
         labels.put(LabelKeys.TYPE, "address-config");
-        labels.put(LabelKeys.NAMESPACE, namespace);
 
         Set<Address> addresses = new LinkedHashSet<>();
         ConfigMapList list = client.configMaps().inNamespace(this.namespace).withLabels(labels).list();
         for (ConfigMap config : list.getItems()) {
-            addresses.add(getAddressFromConfig(config));
+            Address address = getAddressFromConfig(config);
+            if (address.getNamespace().equals(namespace)) {
+                addresses.add(address);
+            }
         }
         return addresses;
     }
 
     @Override
     public void createAddress(Address address) {
-        String name = address.getName();
+        String name = getConfigMapName(address.getNamespace(), address.getName());
         ConfigMap map = create(address);
         if (map != null) {
             client.configMaps().inNamespace(namespace).withName(name).create(map);
@@ -90,7 +100,7 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
 
     @Override
     public void replaceAddress(Address address) {
-        String name = address.getName();
+        String name = getConfigMapName(address.getNamespace(), address.getName());
         ConfigMap previous = client.configMaps().inNamespace(namespace).withName(name).get();
         if (previous == null) {
             return;
@@ -102,7 +112,8 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
     }
 
     private static String getConfigMapName(String namespace, String name) {
-        return KubeUtil.sanitizeName(namespace + "-" + name);
+        // TODO: For multitenancy, find a way for multiple maps to coexist
+        return name;
     }
 
     private ConfigMap create(Address address) {
@@ -117,9 +128,9 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
                 .addToAnnotations(AnnotationKeys.ADDRESS_SPACE, address.getAddressSpace())
                 .endMetadata();
 
-        if (address.getVersion() != null) {
+        if (address.getResourceVersion() != null) {
             builder.editOrNewMetadata()
-                    .withResourceVersion(address.getVersion());
+                    .withResourceVersion(address.getResourceVersion());
         }
 
         try {
@@ -133,8 +144,7 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
 
     @Override
     public void deleteAddress(Address address) {
-        String name = address.getName();
-        client.configMaps().inNamespace(namespace).withName(name).delete();
+        client.configMaps().inNamespace(namespace).withName(getConfigMapName(address.getNamespace(), address.getName())).delete();
     }
 
     @Override

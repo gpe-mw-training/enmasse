@@ -11,6 +11,7 @@ import io.enmasse.k8s.api.cache.Store;
 
 import java.time.Duration;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -60,6 +61,11 @@ public class TestAddressApi implements AddressApi {
             throw new RuntimeException("exception");
         }
         return new LinkedHashSet<>(addresses);
+    }
+
+    @Override
+    public Set<Address> listAddressesWithLabels(String namespace, Map<String, String> labels) {
+        return listAddresses(namespace);
     }
 
     public void setAllAddressesReady(boolean ready) {

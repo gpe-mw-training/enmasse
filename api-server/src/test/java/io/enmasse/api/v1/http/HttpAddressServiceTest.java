@@ -71,7 +71,7 @@ public class HttpAddressServiceTest {
 
     @Test
     public void testList() {
-        Response response = invoke(() -> addressService.getAddressList(null, null));
+        Response response = invoke(() -> addressService.getAddressList(null, null, null));
 
         assertThat(response.getStatus(), is(200));
         AddressList list = (AddressList) response.getEntity();
@@ -83,7 +83,7 @@ public class HttpAddressServiceTest {
 
     @Test
     public void testGetByAddress() {
-        Response response = invoke(() -> addressService.getAddressList(null, "A1"));
+        Response response = invoke(() -> addressService.getAddressList(null, "A1", null));
 
         assertThat(response.getStatus(), is(200));
         Address address = (Address) response.getEntity();
@@ -93,7 +93,7 @@ public class HttpAddressServiceTest {
 
     @Test
     public void testGetByAddressNotFound() {
-        Response response = invoke(() -> addressService.getAddressList(null,"b1"));
+        Response response = invoke(() -> addressService.getAddressList(null,"b1", null));
 
         assertThat(response.getStatus(), is(404));
     }
@@ -101,7 +101,7 @@ public class HttpAddressServiceTest {
     @Test
     public void testListException() {
         addressApi.throwException = true;
-        Response response = invoke(() -> addressService.getAddressList(null, null));
+        Response response = invoke(() -> addressService.getAddressList(null, null, null));
         assertThat(response.getStatus(), is(500));
     }
 

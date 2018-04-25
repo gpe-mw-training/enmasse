@@ -1,6 +1,7 @@
 include ../Makefile.common
 
 ADDRESS_CONTROLLER_IMAGE ?= "address-controller"
+API_SERVER_IMAGE ?= "api-server"
 STANDARD_CONTROLLER_IMAGE ?= "standard-controller"
 ROUTER_IMAGE ?= "router"
 ARTEMIS_IMAGE ?= "artemis"
@@ -28,6 +29,7 @@ INSTALLDIR=enmasse-$(TAG)
 		-V REGISTRY=$(DOCKER_REGISTRY) \
 		-V PROJECT=$(DOCKER_ORG) \
 		-V ADDRESS_CONTROLLER_IMAGE=$(ADDRESS_CONTROLLER_IMAGE) \
+		-V API_SERVER_IMAGE=$(API_SERVER_IMAGE) \
 		-V STANDARD_CONTROLLER_IMAGE=$(STANDARD_CONTROLLER_IMAGE) \
 		-V ROUTER_IMAGE=$(ROUTER_IMAGE) \
 		-V ARTEMIS_IMAGE=$(ARTEMIS_IMAGE) \
@@ -53,6 +55,7 @@ yaml:
 prepare:
 	if [ ! -f jsonnet ]; then $(MAKE) -C jsonnet; fi
 	mkdir -p build/resources/address-controller
+	mkdir -p build/resources/api-server
 	mkdir -p build/resources/service-broker
 	mkdir -p build/resources/prometheus
 	mkdir -p build/resources/grafana
@@ -67,6 +70,7 @@ prepare:
 
 	mkdir -p install/resources/templates
 	mkdir -p install/resources/address-controller
+	mkdir -p install/resources/api-server
 	mkdir -p install/resources/resource-definitions
 	mkdir -p install/resources/plans
 	cp -f include/resource-definitions.yaml install/resources/resource-definitions

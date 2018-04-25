@@ -13,6 +13,7 @@ import io.enmasse.api.auth.RbacSecurityContext;
 import io.enmasse.api.auth.ResourceVerb;
 import io.enmasse.api.common.Exceptions;
 import io.enmasse.api.common.SchemaProvider;
+import io.enmasse.config.AnnotationKeys;
 import io.enmasse.config.LabelKeys;
 import io.enmasse.address.model.AddressSpace;
 import io.enmasse.k8s.api.AddressSpaceApi;
@@ -72,8 +73,8 @@ public abstract class OSBServiceBase {
                 .setName(name)
                 .setType(type)
                 .setPlan(plan)
-                .setCreatedBy(userName)
-                .setCreatedByUid(userId)
+                .putAnnotation(AnnotationKeys.CREATED_BY, userName)
+                .putAnnotation(AnnotationKeys.CREATED_BY_UID, userId)
                 .setAuthenticationService(authService)
                 .putLabel(LabelKeys.SERVICE_INSTANCE_ID, instanceId)
                 .setEndpointList(null)

@@ -104,7 +104,7 @@ data:
                 value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
               - name: AUTHENTICATION_SERVICE_OAUTH_URL
                 value: ${AUTHENTICATION_SERVICE_OAUTH_URL}
-              image: docker.io/lulf/router:latest
+              image: docker.io/enmasseproject/router:latest
               livenessProbe:
                 initialDelaySeconds: 60
                 tcpSocket:
@@ -140,7 +140,7 @@ data:
                 value: '55671'
               - name: CERT_DIR
                 value: /etc/enmasse-certs
-              image: docker.io/lulf/router-metrics:latest
+              image: docker.io/enmasseproject/router-metrics:latest
               livenessProbe:
                 initialDelaySeconds: 60
                 tcpSocket:
@@ -227,7 +227,7 @@ data:
                 value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
               - name: MESSAGING_SECRET
                 value: ${MESSAGING_SECRET}
-              image: docker.io/lulf/standard-controller:latest
+              image: docker.io/enmasseproject/standard-controller:latest
               livenessProbe:
                 httpGet:
                   path: /health
@@ -275,7 +275,7 @@ data:
                 value: ${ADDRESS_SPACE}
               - name: MESSAGING_CERT
                 value: /opt/agent/messaging-cert/tls.crt
-              image: docker.io/lulf/agent:latest
+              image: docker.io/enmasseproject/agent:latest
               livenessProbe:
                 httpGet:
                   path: /probe
@@ -458,7 +458,7 @@ data:
                       value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
                     - name: AUTHENTICATION_SERVICE_OAUTH_URL
                       value: ${AUTHENTICATION_SERVICE_OAUTH_URL}
-                    image: docker.io/lulf/artemis:latest
+                    image: docker.io/enmasseproject/artemis:latest
                     lifecycle:
                       preStop:
                         exec:
@@ -648,7 +648,7 @@ data:
                       value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
                     - name: AUTHENTICATION_SERVICE_OAUTH_URL
                       value: ${AUTHENTICATION_SERVICE_OAUTH_URL}
-                    image: docker.io/lulf/artemis:latest
+                    image: docker.io/enmasseproject/artemis:latest
                     lifecycle:
                       preStop:
                         exec:
@@ -711,7 +711,7 @@ data:
                       value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
                     - name: AUTHENTICATION_SERVICE_OAUTH_URL
                       value: ${AUTHENTICATION_SERVICE_OAUTH_URL}
-                    image: docker.io/lulf/router:latest
+                    image: docker.io/enmasseproject/router:latest
                     livenessProbe:
                       initialDelaySeconds: 60
                       tcpSocket:
@@ -752,7 +752,7 @@ data:
                       value: ${NAME}
                     - name: CERT_DIR
                       value: /etc/enmasse-certs
-                    image: docker.io/lulf/topic-forwarder:latest
+                    image: docker.io/enmasseproject/topic-forwarder:latest
                     livenessProbe:
                       httpGet:
                         path: /health
@@ -1013,7 +1013,7 @@ data:
                 value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
               - name: AUTHENTICATION_SERVICE_OAUTH_URL
                 value: ${AUTHENTICATION_SERVICE_OAUTH_URL}
-              image: docker.io/lulf/router:latest
+              image: docker.io/enmasseproject/router:latest
               livenessProbe:
                 initialDelaySeconds: 60
                 tcpSocket:
@@ -1049,7 +1049,7 @@ data:
                 value: '55671'
               - name: CERT_DIR
                 value: /etc/enmasse-certs
-              image: docker.io/lulf/router-metrics:latest
+              image: docker.io/enmasseproject/router-metrics:latest
               livenessProbe:
                 initialDelaySeconds: 60
                 tcpSocket:
@@ -1136,7 +1136,7 @@ data:
                 value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
               - name: MESSAGING_SECRET
                 value: ${MESSAGING_SECRET}
-              image: docker.io/lulf/standard-controller:latest
+              image: docker.io/enmasseproject/standard-controller:latest
               livenessProbe:
                 httpGet:
                   path: /health
@@ -1184,7 +1184,7 @@ data:
                 value: ${ADDRESS_SPACE}
               - name: MESSAGING_CERT
                 value: /opt/agent/messaging-cert/tls.crt
-              image: docker.io/lulf/agent:latest
+              image: docker.io/enmasseproject/agent:latest
               livenessProbe:
                 httpGet:
                   path: /probe
@@ -1367,7 +1367,7 @@ data:
                       value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
                     - name: AUTHENTICATION_SERVICE_OAUTH_URL
                       value: ${AUTHENTICATION_SERVICE_OAUTH_URL}
-                    image: docker.io/lulf/artemis:latest
+                    image: docker.io/enmasseproject/artemis:latest
                     lifecycle:
                       preStop:
                         exec:
@@ -1557,7 +1557,7 @@ data:
                       value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
                     - name: AUTHENTICATION_SERVICE_OAUTH_URL
                       value: ${AUTHENTICATION_SERVICE_OAUTH_URL}
-                    image: docker.io/lulf/artemis:latest
+                    image: docker.io/enmasseproject/artemis:latest
                     lifecycle:
                       preStop:
                         exec:
@@ -1620,7 +1620,7 @@ data:
                       value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
                     - name: AUTHENTICATION_SERVICE_OAUTH_URL
                       value: ${AUTHENTICATION_SERVICE_OAUTH_URL}
-                    image: docker.io/lulf/router:latest
+                    image: docker.io/enmasseproject/router:latest
                     livenessProbe:
                       initialDelaySeconds: 60
                       tcpSocket:
@@ -1661,7 +1661,7 @@ data:
                       value: ${NAME}
                     - name: CERT_DIR
                       value: /etc/enmasse-certs
-                    image: docker.io/lulf/topic-forwarder:latest
+                    image: docker.io/enmasseproject/topic-forwarder:latest
                     livenessProbe:
                       httpGet:
                         path: /health
@@ -1776,7 +1776,7 @@ data:
             - command:
               - node
               - /opt/app-root/src/bin/subserv.js
-              image: docker.io/lulf/agent:latest
+              image: docker.io/enmasseproject/agent:latest
               livenessProbe:
                 initialDelaySeconds: 60
                 tcpSocket:
@@ -1852,7 +1852,7 @@ data:
                 value: /etc/mqtt-gateway/ssl/tls.crt
               - name: ENMASSE_MQTT_LISTENPORT
                 value: '8883'
-              image: docker.io/lulf/mqtt-gateway:latest
+              image: docker.io/enmasseproject/mqtt-gateway:latest
               livenessProbe:
                 initialDelaySeconds: 60
                 tcpSocket:
@@ -1866,7 +1866,7 @@ data:
               - mountPath: /etc/mqtt-gateway/ssl
                 name: ssl-certs
                 readOnly: true
-            - image: docker.io/lulf/mqtt-gateway:latest
+            - image: docker.io/enmasseproject/mqtt-gateway:latest
               livenessProbe:
                 initialDelaySeconds: 60
                 tcpSocket:
@@ -1908,7 +1908,7 @@ data:
                 value: $(MESSAGING_SERVICE_PORT_AMQPS_NORMAL)
               - name: MESSAGING_SERVICE_ROUTE_CONTAINER_PORT
                 value: $(MESSAGING_SERVICE_PORT_AMQPS_BROKER)
-              image: docker.io/lulf/mqtt-lwt:latest
+              image: docker.io/enmasseproject/mqtt-lwt:latest
               name: mqtt-lwt
               volumeMounts:
               - mountPath: /etc/enmasse-certs
@@ -2054,7 +2054,7 @@ data:
                 value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
               - name: AUTHENTICATION_SERVICE_OAUTH_URL
                 value: ${AUTHENTICATION_SERVICE_OAUTH_URL}
-              image: docker.io/lulf/artemis:latest
+              image: docker.io/enmasseproject/artemis:latest
               livenessProbe:
                 exec:
                   command:
@@ -2194,7 +2194,7 @@ data:
                 value: ${AUTHENTICATION_SERVICE_SASL_INIT_HOST}
               - name: AUTHENTICATION_SERVICE_OAUTH_URL
                 value: ${AUTHENTICATION_SERVICE_OAUTH_URL}
-              image: docker.io/lulf/agent:latest
+              image: docker.io/enmasseproject/agent:latest
               livenessProbe:
                 httpGet:
                   path: /probe

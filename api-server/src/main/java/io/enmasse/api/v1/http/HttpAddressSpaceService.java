@@ -8,6 +8,8 @@ import io.enmasse.address.model.AddressSpace;
 import io.enmasse.address.model.AddressSpaceList;
 import io.enmasse.address.model.AddressSpaceResolver;
 import io.enmasse.api.common.SchemaProvider;
+import io.enmasse.api.v1.AddressApiHelper;
+import io.enmasse.config.AnnotationKeys;
 import io.enmasse.k8s.api.AddressSpaceApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,8 @@ import org.slf4j.LoggerFactory;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 @Path(HttpAddressSpaceService.BASE_URI)
@@ -42,9 +46,15 @@ public class HttpAddressSpaceService {
 
     @GET
     @Produces({MediaType.APPLICATION_JSON})
-    public Response getAddressSpaceList(@PathParam("namespace") String namespace) throws Exception {
-        return doRequest("Error getting address space list", () ->
-                Response.ok(new AddressSpaceList(addressSpaceApi.listAddressSpaces(namespace))).build());
+    public Response getAddressSpaceList(@PathParam("namespace") String namespace, @QueryParam("labelSelector") String labelSelector) throws Exception {
+        return doRequest("Error getting address space list", () -> {
+            if (labelSelector != null) {
+                Map<String, String> labels = AddressApiHelper.parseLabelSelector(labelSelector);
+                return Response.ok(new AddressSpaceList(addressSpaceApi.listAddressSpacesWithLabels(namespace, labels))).build();
+            } else {
+                return Response.ok(new AddressSpaceList(addressSpaceApi.listAddressSpaces(namespace))).build();
+            }
+        });
     }
 
     @GET
@@ -65,7 +75,7 @@ public class HttpAddressSpaceService {
             AddressSpaceResolver addressSpaceResolver = new AddressSpaceResolver(schemaProvider.getSchema());
             addressSpaceResolver.validate(input);
             addressSpaceApi.createAddressSpace(input);
-            AddressSpace created = addressSpaceApi.getAddressSpaceWithName(namespace, input.getName()).get();
+            AddressSpace created = addressSpaceApi.getAddressSpaceWithName(namespace, input.getName()).orElse(input);
             UriBuilder builder = uriInfo.getAbsolutePathBuilder();
             builder.path(created.getName());
             return Response.created(builder.build()).entity(created).build();
@@ -80,7 +90,7 @@ public class HttpAddressSpaceService {
             AddressSpaceResolver addressSpaceResolver = new AddressSpaceResolver(schemaProvider.getSchema());
             addressSpaceResolver.validate(input);
             addressSpaceApi.replaceAddressSpace(input);
-            AddressSpace replaced = addressSpaceApi.getAddressSpaceWithName(namespace, input.getName()).get();
+            AddressSpace replaced = addressSpaceApi.getAddressSpaceWithName(namespace, input.getName()).orElse(input);
             return Response.ok().entity(replaced).build();
         });
     }

@@ -75,13 +75,12 @@ public class KubernetesHelper implements Kubernetes {
 
     @Override
     public void createNamespace(AddressSpace addressSpace) {
-        String name = UUID.fromString(KubeUtil.sanitizeName(addressSpace.getName() + "-" + addressSpace.getNamespace())).toString();
         if (client.isAdaptable(OpenShiftClient.class)) {
             ImpersonatorInterceptor.setImpersonateUser(impersonateUser);
             try {
                 client.projectrequests().createNew()
                         .editOrNewMetadata()
-                        .withName(name)
+                        .withName(addressSpace.getAnnotation(AnnotationKeys.NAMESPACE))
                         .endMetadata()
                         .done();
 
@@ -92,8 +91,8 @@ public class KubernetesHelper implements Kubernetes {
                         .addToLabels(LabelKeys.TYPE, "namespace")
                         .addToLabels(LabelKeys.ENVIRONMENT, environment)
                         .addToAnnotations(AnnotationKeys.ADDRESS_SPACE, addressSpace.getName())
-                        .addToAnnotations(AnnotationKeys.NAMESPACE, name)
-                        .addToAnnotations(AnnotationKeys.CREATED_BY, addressSpace.getCreatedBy())
+                        .addToAnnotations(AnnotationKeys.NAMESPACE, addressSpace.getAnnotation(AnnotationKeys.NAMESPACE))
+                        .addToAnnotations(AnnotationKeys.CREATED_BY, addressSpace.getAnnotation(AnnotationKeys.CREATED_BY))
                         .endMetadata()
                         .done();
             } finally {
@@ -103,7 +102,7 @@ public class KubernetesHelper implements Kubernetes {
         } else {
             client.namespaces().createNew()
                     .editOrNewMetadata()
-                    .withName(name)
+                    .withName(addressSpace.getAnnotation(AnnotationKeys.NAMESPACE))
                     .addToLabels("app", "enmasse")
                     .addToLabels(LabelKeys.TYPE, "namespace")
                     .addToLabels(LabelKeys.ENVIRONMENT, environment)
@@ -130,7 +129,7 @@ public class KubernetesHelper implements Kubernetes {
         if (isRBACSupported() && client.isAdaptable(OpenShiftClient.class)) {
             try {
                 ImpersonatorInterceptor.setImpersonateUser(impersonateUser);
-                String groupName = "system:serviceaccounts:" + addressSpace.getNamespace();
+                String groupName = "system:serviceaccounts:" + addressSpace.getAnnotation(AnnotationKeys.NAMESPACE);
                 log.info("Adding system:image-pullers policy for {}", groupName);
                 client.roleBindings()
                         .inNamespace(namespace)
@@ -407,7 +406,7 @@ public class KubernetesHelper implements Kubernetes {
     @Override
     public void addAddressSpaceAdminRoleBinding(AddressSpace addressSpace) {
         if (isRBACSupported() && client.isAdaptable(OpenShiftClient.class)) {
-            createRoleBinding("addressspace-admins", addressSpace.getNamespace(), "ClusterRole", "admin", Arrays.asList(
+            createRoleBinding("addressspace-admins", addressSpace.getAnnotation(AnnotationKeys.NAMESPACE), "ClusterRole", "admin", Arrays.asList(
                     new Subject("ServiceAccount", addressControllerSa, namespace)));
         }
     }
@@ -435,7 +434,7 @@ public class KubernetesHelper implements Kubernetes {
 
     @Override
     public void addAddressSpaceRoleBindings(AddressSpace addressSpace) {
-        String namespace = addressSpace.getNamespace();
+        String namespace = addressSpace.getAnnotation(AnnotationKeys.NAMESPACE);
 
         if (isRBACSupported() && client.isAdaptable(OpenShiftClient.class)) {
             createRoleBinding("address-space-viewers", namespace, "ClusterRole", "view", Arrays.asList(

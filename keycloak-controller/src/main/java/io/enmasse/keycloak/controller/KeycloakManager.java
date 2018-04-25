@@ -8,6 +8,7 @@ package io.enmasse.keycloak.controller;
 import io.enmasse.address.model.AddressSpace;
 import io.enmasse.address.model.AuthenticationServiceType;
 import io.enmasse.address.model.Endpoint;
+import io.enmasse.config.AnnotationKeys;
 import io.enmasse.k8s.api.cache.Store;
 import io.enmasse.k8s.api.Watcher;
 import org.slf4j.Logger;
@@ -62,7 +63,7 @@ public class KeycloakManager implements Watcher<AddressSpace>
         }
         for(AddressSpace addressSpace : standardAuthSvcSpaces.values()) {
             log.info("Creating realm {}", addressSpace.getName());
-            keycloak.createRealm(addressSpace.getName(), addressSpace.getCreatedBy(), addressSpace.getCreatedByUid(), getConsoleRedirectURI(standardAuthSvcSpaces.get(addressSpace.getName())));
+            keycloak.createRealm(addressSpace.getName(), addressSpace.getAnnotation(AnnotationKeys.CREATED_BY), addressSpace.getAnnotation(AnnotationKeys.CREATED_BY_UID), getConsoleRedirectURI(standardAuthSvcSpaces.get(addressSpace.getName())));
         }
     }
 }

@@ -83,7 +83,6 @@ public class HTTPServerTest {
                 .setNamespace("ns")
                 .setType("queue")
                 .setPlan("myplan")
-                .setUuid(UUID.randomUUID().toString())
                 .build());
 
         HttpClient client = vertx.createHttpClient();

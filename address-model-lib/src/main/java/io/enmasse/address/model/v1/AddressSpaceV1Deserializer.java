@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
 import io.enmasse.address.model.*;
+import io.enmasse.config.AnnotationKeys;
 
 import java.io.IOException;
 import java.util.*;
@@ -55,12 +56,29 @@ class AddressSpaceV1Deserializer extends JsonDeserializer<AddressSpace> {
             builder.setNamespace(metadata.get(Fields.NAMESPACE).asText());
         }
 
+        if (metadata.hasNonNull(Fields.UID)) {
+            builder.setUid(metadata.get(Fields.UID).asText());
+        }
+
+        if (metadata.hasNonNull(Fields.RESOURCE_VERSION)) {
+            builder.setResourceVersion(metadata.get(Fields.RESOURCE_VERSION).asText());
+        }
+
+        if (metadata.hasNonNull(Fields.CREATION_TIMESTAMP)) {
+            builder.setCreationTimestamp(metadata.get(Fields.CREATION_TIMESTAMP).asText());
+        }
+
+        if (metadata.hasNonNull(Fields.SELF_LINK)) {
+            builder.setSelfLink(metadata.get(Fields.SELF_LINK).asText());
+        }
+
+        // TODO: Remove the CREATED_BY and CREATED_BY_UID field parsing
         if (metadata.hasNonNull(Fields.CREATED_BY)) {
-            builder.setCreatedBy(metadata.get(Fields.CREATED_BY).asText());
+            builder.putAnnotation(AnnotationKeys.CREATED_BY, metadata.get(Fields.CREATED_BY).asText());
         }
 
         if (metadata.hasNonNull(Fields.CREATED_BY_UID)) {
-            builder.setCreatedByUid(metadata.get(Fields.CREATED_BY_UID).asText());
+            builder.putAnnotation(AnnotationKeys.CREATED_BY_UID, metadata.get(Fields.CREATED_BY_UID).asText());
         }
 
         if (metadata.hasNonNull(Fields.LABELS)) {

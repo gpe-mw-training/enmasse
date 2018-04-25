@@ -13,7 +13,9 @@ public interface AnnotationKeys {
     String ENDPOINT_PORT = "io.enmasse.endpointPort";
     String SERVICE_NAME = "enmasse.io/service-name";
     String SERVICE_PORT_PREFIX = "enmasse.io/service-port.";
-    String CREATED_BY = "io.enmasse.createdBy";
+    String CREATED_BY_OLD = "io.enmasse.createdBy";
+    String CREATED_BY = "enmasse.io/created-by";
+    String CREATED_BY_UID = "enmasse.io/created-by-uid";
     String DEFINED_BY = "enmasse.io/defined-by";
     String BROKER_ID = "enmasse.io/broker-id";
     String NAMESPACE = "enmasse.io/namespace";

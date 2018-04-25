@@ -177,8 +177,6 @@ if [ -n "$USE_OPENSHIFT" ]; then
     runcmd "oc policy add-role-to-user admin system:serviceaccount:${NAMESPACE}:enmasse-admin" "Add permissions for editing OpenShift resources to admin SA"
 fi
 
-create_self_signed_cert "oc" "address-controller.${NAMESPACE}.svc.cluster.local" "address-controller.${NAMESPACE}.svc.cluster" "address-controller.${NAMESPACE}.svc" "address-controller-cert"
-
 for auth_service in $AUTH_SERVICES
 do
     if [ "$auth_service" == "none" ]; then
@@ -225,11 +223,6 @@ fi
 runcmd "$CMD create -n ${NAMESPACE} configmap address-controller-config -n ${NAMESPACE}" "Create address-controller configmap"
 runcmd "$CMD create -n ${NAMESPACE} -f ${RESOURCE_DIR}/address-controller/address-space-definitions.yaml" "Create address space definitions"
 runcmd "$CMD create -n ${NAMESPACE} -f ${RESOURCE_DIR}/address-controller/deployment.yaml" "Create address controller deployment"
-runcmd "$CMD create -n ${NAMESPACE} -f ${RESOURCE_DIR}/address-controller/service.yaml" "Create address controller service"
-
-if [ -n "$USE_OPENSHIFT" ]; then
-    runcmd "oc create -n ${NAMESPACE} -f ${RESOURCE_DIR}/address-controller/route.yaml" "Create address controller route"
-fi
 
 if [ $MODE == "multitenant" ]; then
     if [ -n "$OS_ALLINONE" ] && [ -n "$USE_OPENSHIFT" ]

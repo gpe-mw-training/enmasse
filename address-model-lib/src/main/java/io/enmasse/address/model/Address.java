@@ -4,6 +4,8 @@
  */
 package io.enmasse.address.model;
 
+import io.enmasse.config.AnnotationKeys;
+
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -13,26 +15,30 @@ import java.util.*;
 public class Address {
     private final String name;
     private final String namespace;
-    private final String uuid;
+    private final String selfLink;
+    private final String uid;
+    private final String creationTimestamp;
+    private final String resourceVersion;
     private final String address;
     private final String addressSpace;
     private final String type;
     private final String plan;
     private final Status status;
-    private final String version;
     private final Map<String, String> labels;
     private final Map<String, String> annotations;
 
-    private Address(String name, String namespace, String uuid, String address, String addressSpace, String type, String plan, Status status, String version, Map<String, String> labels, Map<String, String> annotations) {
+    private Address(String name, String namespace, String selfLink, String uid, String creationTimestamp, String resourceVersion, String address, String addressSpace, String type, String plan, Status status, Map<String, String> labels, Map<String, String> annotations) {
         this.name = name;
         this.namespace = namespace;
-        this.uuid = uuid;
+        this.selfLink = selfLink;
+        this.uid = uid;
+        this.creationTimestamp = creationTimestamp;
+        this.resourceVersion = resourceVersion;
         this.address = address;
         this.addressSpace = addressSpace;
         this.type = type;
         this.plan = plan;
         this.status = status;
-        this.version = version;
         this.labels = labels;
         this.annotations = annotations;
     }
@@ -49,8 +55,8 @@ public class Address {
         return namespace;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getUid() {
+        return uid;
     }
 
     public String getAddressSpace() {
@@ -69,10 +75,6 @@ public class Address {
         return status;
     }
 
-    public String getVersion() {
-        return version;
-    }
-
     public Map<String, String> getAnnotations() {
         return annotations;
     }
@@ -81,17 +83,29 @@ public class Address {
         return labels;
     }
 
+    public String getSelfLink() {
+        return selfLink;
+    }
+
+    public String getCreationTimestamp() {
+        return creationTimestamp;
+    }
+
+    public String getResourceVersion() {
+        return resourceVersion;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{address=").append(address).append(",");
         sb.append("name=").append(name).append(",");
-        sb.append("uuid=").append(uuid).append(",");
+        sb.append("uid=").append(uid).append(",");
         sb.append("annotations=").append(annotations).append(",");
         sb.append("type=").append(type).append(",");
         sb.append("plan=").append(plan).append(",");
         sb.append("status=").append(status).append(",");
-        sb.append("version=").append(version).append("}");
+        sb.append("resourceVersion=").append(resourceVersion).append("}");
         return sb.toString();
     }
 
@@ -125,13 +139,15 @@ public class Address {
     public static class Builder {
         private String name;
         private String namespace;
-        private String uuid;
+        private String uid;
+        private String selfLink;
+        private String creationTimestamp;
+        private String resourceVersion;
         private String address;
         private String addressSpace;
         private String type;
         private String plan;
         private Status status = new Status(false);
-        private String version;
         private Map<String, String> labels = new HashMap<>();
         private Map<String, String> annotations = new HashMap<>();
 
@@ -141,19 +157,21 @@ public class Address {
         public Builder(io.enmasse.address.model.Address address) {
             this.name = address.getName();
             this.namespace = address.getNamespace();
-            this.uuid = address.getUuid();
+            this.uid = address.getUid();
             this.address = address.getAddress();
             this.addressSpace = address.getAddressSpace();
             this.type = address.getType();
             this.plan = address.getPlan();
             this.status = new Status(address.getStatus());
-            this.version = address.getVersion();
+            this.selfLink = address.getSelfLink();
+            this.creationTimestamp = address.getCreationTimestamp();
+            this.resourceVersion = address.getResourceVersion();
             this.labels = new HashMap<>(address.getLabels());
             this.annotations = new HashMap<>(address.getAnnotations());
         }
 
-        public Builder setUuid(String uuid) {
-            this.uuid = uuid;
+        public Builder setUid(String uid) {
+            this.uid = uid;
             return this;
         }
 
@@ -212,8 +230,18 @@ public class Address {
             return this;
         }
 
-        public Builder setVersion(String version) {
-            this.version = version;
+        public Builder setSelfLink(String selfLink) {
+            this.selfLink = selfLink;
+            return this;
+        }
+
+        public Builder setCreationTimestamp(String creationTimestamp) {
+            this.creationTimestamp = creationTimestamp;
+            return this;
+        }
+
+        public Builder setResourceVersion(String resourceVersion) {
+            this.resourceVersion = resourceVersion;
             return this;
         }
 
@@ -224,13 +252,12 @@ public class Address {
             Objects.requireNonNull(status, "status not set");
             Objects.requireNonNull(labels, "labels not set");
             Objects.requireNonNull(annotations, "annotations not set");
-            if (uuid == null) {
-                uuid = UUID.nameUUIDFromBytes(address.getBytes(StandardCharsets.UTF_8)).toString();
-            }
             if (name == null) {
+                String uuid = UUID.nameUUIDFromBytes(address.getBytes(StandardCharsets.UTF_8)).toString();
+                putAnnotation(AnnotationKeys.UUID, uuid);
                 name = KubeUtil.sanitizeWithUuid(address, uuid);
             }
-            return new Address(name, namespace, uuid, address, addressSpace, type, plan, status, version, labels, annotations);
+            return new Address(name, namespace, selfLink, uid, creationTimestamp, resourceVersion, address, addressSpace, type, plan, status, labels, annotations);
         }
     }
 }

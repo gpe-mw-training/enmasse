@@ -69,7 +69,8 @@ local images = import "images.jsonnet";
                   "valueFrom": {
                     "secretKeyRef": {
                       "name": "api-server-secret",
-                      "key": "clientCa.pem"
+                      "key": "clientCa.pem",
+                      "optional": true
                     }
                   }
                 },
@@ -108,5 +109,38 @@ local images = import "images.jsonnet";
         }
       }
     }
+  },
+
+  api_service::
+  {
+    "apiVersion": "v1",
+    "kind": "Template",
+    "objects": [
+      {
+        "apiVersion": "apiregistration.k8s.io/v1beta1",
+        "kind": "APIService",
+        "metadata": {
+          "name": "v1.enmasse.io"
+        },
+        "spec": {
+          "group": "enmasse.io",
+          "version": "v1",
+          "insecureSkipTLSVerify": true,
+          "groupPriorityMinimum": 1000,
+          "versionPriority": 15,
+          "service": {
+            "name": "api-server",
+            "namespace": "${ENMASSE_NAMESPACE}"
+          }
+        }
+      }
+    ],
+    "parameters": [
+      {
+        "name": "ENMASSE_NAMESPACE",
+        "description": "Namespace where EnMasse is running",
+        "value": "enmasse"
+      }
+    ]
   }
 }

@@ -38,7 +38,22 @@ class AddressV1Serializer extends JsonSerializer<Address> {
         metadata.put(Fields.NAME, address.getName());
         metadata.put(Fields.NAMESPACE, address.getNamespace());
         metadata.put(Fields.ADDRESS_SPACE, address.getAddressSpace());
-        metadata.put(Fields.UUID, address.getUuid());
+
+        if (address.getUid() != null) {
+            metadata.put(Fields.UID, address.getUid());
+        }
+
+        if (address.getSelfLink() != null) {
+            metadata.put(Fields.SELF_LINK, address.getSelfLink());
+        }
+
+        if (address.getCreationTimestamp() != null) {
+            metadata.put(Fields.CREATION_TIMESTAMP, address.getCreationTimestamp());
+        }
+
+        if (address.getResourceVersion()  != null) {
+            metadata.put(Fields.RESOURCE_VERSION, address.getResourceVersion());
+        }
 
         if (!address.getLabels().isEmpty()) {
             ObjectNode labels = metadata.putObject(Fields.LABELS);

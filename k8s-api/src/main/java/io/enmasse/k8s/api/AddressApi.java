@@ -7,6 +7,8 @@ package io.enmasse.k8s.api;
 import io.enmasse.address.model.Address;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -16,6 +18,7 @@ import java.util.Set;
 public interface AddressApi {
     Optional<Address> getAddressWithName(String namespace, String name);
     Set<Address> listAddresses(String namespace);
+    Set<Address> listAddressesWithLabels(String namespace, Map<String, String> labels);
 
     void createAddress(Address address);
     void replaceAddress(Address address);

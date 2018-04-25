@@ -5,8 +5,8 @@
 package io.enmasse.k8s.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.enmasse.address.model.KubeUtil;
 import io.enmasse.address.model.v1.CodecV1;
+import io.enmasse.config.AnnotationKeys;
 import io.enmasse.config.LabelKeys;
 import io.enmasse.address.model.AddressSpace;
 import io.enmasse.k8s.api.cache.*;
@@ -37,7 +37,7 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
     }
 
     private static String getConfigMapName(String namespace, String name) {
-        return KubeUtil.sanitizeName(namespace + "-" + name);
+        return name; // TODO: Find a way to update this
     }
 
     @Override
@@ -63,8 +63,7 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
 
     @Override
     public void replaceAddressSpace(AddressSpace addressSpace) throws Exception {
-        String name = addressSpace.getName();
-        ConfigMap previous = client.configMaps().withName(name).get();
+        ConfigMap previous = client.configMaps().withName(getConfigMapName(addressSpace.getNamespace(), addressSpace.getName())).get();
         if (previous == null) {
             return;
         }
@@ -78,11 +77,13 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
 
     private void create(DoneableConfigMap config, AddressSpace addressSpace) throws Exception {
         Map<String, String> labels = new HashMap<>(addressSpace.getLabels());
-        String name = addressSpace.getName();
+        String name = getConfigMapName(addressSpace.getNamespace(), addressSpace.getName());
         labels.put(LabelKeys.TYPE, "address-space");
+        labels.put(LabelKeys.NAMESPACE, addressSpace.getNamespace());
         config.withNewMetadata()
                 .withName(name)
                 .addToLabels(labels)
+                .withResourceVersion(addressSpace.getResourceVersion())
                 .addToAnnotations(addressSpace.getAnnotations())
                 .endMetadata()
                 .addToData("config.json", mapper.writeValueAsString(addressSpace))
@@ -91,14 +92,14 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
 
     @Override
     public void deleteAddressSpace(AddressSpace addressSpace) {
-        String name = addressSpace.getName();
+        String name = getConfigMapName(addressSpace.getNamespace(), addressSpace.getName());
         client.configMaps().withName(name).delete();
     }
 
     @Override
     public Set<AddressSpace> listAddressSpaces(String namespace) {
         Set<AddressSpace> instances = new LinkedHashSet<>();
-        for (ConfigMap map : list(new ListOptions()).getItems()) {
+        for (ConfigMap map : list(namespace).getItems()) {
             instances.add(getAddressSpaceFromConfig(map));
         }
         return instances;
@@ -121,7 +122,12 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
     private AddressSpace getAddressSpaceFromConfig(ConfigMap map) {
         try {
             AddressSpace addressSpace = mapper.readValue(map.getData().get("config.json"), AddressSpace.class);
-            return new AddressSpace.Builder(addressSpace).setUid(map.getMetadata().getUid()).build();
+            return new AddressSpace.Builder(addressSpace)
+                    .setUid(map.getMetadata().getUid())
+                    .setCreationTimestamp(map.getMetadata().getCreationTimestamp())
+                    .setResourceVersion(map.getMetadata().getResourceVersion())
+                    .setSelfLink("/apis/enmasse.io/v1/namespaces/" + addressSpace.getNamespace() + "/addressspaces/" + addressSpace.getName())
+                    .build();
         } catch (Exception e) {
             log.error("Error decoding address space", e);
             throw new RuntimeException(e);
@@ -153,7 +159,7 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
 
     @Override
     public AddressApi withAddressSpace(AddressSpace addressSpace) {
-        return new ConfigMapAddressApi(client, addressSpace.getNamespace());
+        return new ConfigMapAddressApi(client, addressSpace.getAnnotation(AnnotationKeys.NAMESPACE));
     }
 
     private ConfigMapList list(String namespace) {

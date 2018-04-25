@@ -7,7 +7,6 @@ package io.enmasse.api.v1.http;
 import io.enmasse.address.model.AddressSpace;
 import io.enmasse.address.model.AddressSpaceList;
 import io.enmasse.address.model.Endpoint;
-import io.enmasse.api.auth.RbacSecurityContext;
 import io.enmasse.api.common.DefaultExceptionMapper;
 import io.enmasse.api.server.TestSchemaProvider;
 import io.enmasse.k8s.api.TestAddressSpaceApi;
@@ -16,16 +15,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class HttpAddressSpaceServiceTest {
     private HttpAddressSpaceService addressSpaceService;
@@ -76,7 +71,7 @@ public class HttpAddressSpaceServiceTest {
     public void testList() {
         addressSpaceApi.createAddressSpace(a1);
         addressSpaceApi.createAddressSpace(a2);
-        Response response = invoke(() -> addressSpaceService.getAddressSpaceList(null));
+        Response response = invoke(() -> addressSpaceService.getAddressSpaceList(null, null));
         assertThat(response.getStatus(), is(200));
         AddressSpaceList data = (AddressSpaceList) response.getEntity();
 
@@ -88,7 +83,7 @@ public class HttpAddressSpaceServiceTest {
     @Test
     public void testListException() {
         addressSpaceApi.throwException = true;
-        Response response = invoke(() -> addressSpaceService.getAddressSpaceList(null));
+        Response response = invoke(() -> addressSpaceService.getAddressSpaceList(null, null));
         assertThat(response.getStatus(), is(500));
     }
 

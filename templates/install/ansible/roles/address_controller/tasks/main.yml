@@ -5,7 +5,3 @@
   shell: oc apply -f {{ playbook_dir }}/resources/address-controller/address-space-definitions.yaml
 - name: Create the address controller deployment
   shell: oc apply -f {{ playbook_dir }}/resources/address-controller/deployment.yaml
-- name: Create the address controller service
-  shell: oc apply -f {{ playbook_dir }}/resources/address-controller/service.yaml
-- name: Create the address controller route
-  shell: oc apply -f {{ playbook_dir }}/resources/address-controller/route.yaml

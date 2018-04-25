@@ -53,12 +53,20 @@ class AddressSpaceV1Serializer extends JsonSerializer<AddressSpace> {
             }
         }
 
-        if (addressSpace.getCreatedBy() != null) {
-            metadata.put(Fields.CREATED_BY, addressSpace.getCreatedBy());
+        if (addressSpace.getUid() != null) {
+            metadata.put(Fields.UID, addressSpace.getUid());
         }
 
-        if (addressSpace.getCreatedByUid() != null) {
-            metadata.put(Fields.CREATED_BY_UID, addressSpace.getCreatedByUid());
+        if (addressSpace.getSelfLink() != null) {
+            metadata.put(Fields.SELF_LINK, addressSpace.getSelfLink());
+        }
+
+        if (addressSpace.getCreationTimestamp() != null) {
+            metadata.put(Fields.CREATION_TIMESTAMP, addressSpace.getCreationTimestamp());
+        }
+
+        if (addressSpace.getResourceVersion()  != null) {
+            metadata.put(Fields.RESOURCE_VERSION, addressSpace.getResourceVersion());
         }
 
         spec.put(Fields.TYPE, addressSpace.getType());

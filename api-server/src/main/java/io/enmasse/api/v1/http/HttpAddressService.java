@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -42,12 +43,19 @@ public class HttpAddressService {
     @GET
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response getAddressList(@PathParam("namespace") String namespace, @QueryParam("address") String address) throws Exception {
+    public Response getAddressList(@PathParam("namespace") String namespace, @QueryParam("address") String address, @QueryParam("labelSelector") String labelSelector) throws Exception {
         return doRequest("Error listing addresses",() -> {
-            AddressList list = apiHelper.getAddresses(namespace);
             if (address == null) {
-                return Response.ok(list).build();
+                if (labelSelector != null) {
+                    Map<String, String> labels = AddressApiHelper.parseLabelSelector(labelSelector);
+                    AddressList list = apiHelper.getAddressesWithLabels(namespace, labels);
+                    return Response.ok(list).build();
+                } else {
+                    AddressList list = apiHelper.getAddresses(namespace);
+                    return Response.ok(list).build();
+                }
             } else {
+                AddressList list = apiHelper.getAddresses(namespace);
                 for (Address entity : list) {
                     if (entity.getAddress().equals(address)) {
                         return Response.ok(entity).build();

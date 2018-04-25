@@ -98,4 +98,24 @@ public class AddressApiHelper {
         addressApi.replaceAddress(address);
         return address;
     }
+
+    public static Map<String,String> parseLabelSelector(String labelSelector) {
+        Map<String, String> labels = new HashMap<>();
+        String [] pairs = labelSelector.split(",");
+        for (String pair : pairs) {
+            String elements[] = pair.split("=");
+            if (elements.length > 2) {
+                labels.put(elements[0], elements[1]);
+            }
+        }
+        return labels;
+    }
+
+    public AddressList getAddressesWithLabels(String namespace, Map<String, String> labels) {
+        AddressList list = new AddressList();
+        for (AddressSpace addressSpace : addressSpaceApi.listAddressSpaces(namespace)) {
+            list.addAll(addressSpaceApi.withAddressSpace(addressSpace).listAddressesWithLabels(namespace, labels));
+        }
+        return list;
+    }
 }

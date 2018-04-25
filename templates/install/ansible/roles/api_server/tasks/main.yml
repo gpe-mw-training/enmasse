@@ -1,0 +1,7 @@
+---
+- name: Create EnMasse API Server Deployment
+  shell: oc apply -n {{ namespace }} -f "{{ playbook_dir }}/resources/api-server/deployment.yaml"
+- name: Create EnMasse API Server Service
+  shell: oc apply -n {{ namespace }} -f "{{ playbook_dir }}/resources/api-server/service.yaml"
+- name: Register API service
+  shell: oc process -f "{{ playbook_dir }}/resources/template/api-service.yaml" ENMASSE_NAMESPACE={{ namespace }} | oc create -f -
