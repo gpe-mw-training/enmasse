@@ -67,9 +67,10 @@ local images = import "images.jsonnet";
                 {
                   "name": "CLIENT_CA",
                   "valueFrom": {
-                    "secretKeyRef": {
-                      "name": "api-server-secret",
-                      "key": "clientCa.pem",
+                    "configMapKeyRef": {
+                      "name": "extension-apiserver-authentication",
+                      "namespace": "kube-system",
+                      "key": "client-ca-file",
                       "optional": true
                     }
                   }

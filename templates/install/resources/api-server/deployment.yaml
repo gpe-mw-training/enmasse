@@ -17,9 +17,10 @@ spec:
       - env:
         - name: CLIENT_CA
           valueFrom:
-            secretKeyRef:
-              key: clientCa.pem
-              name: api-server-secret
+            configMapKeyRef:
+              key: client-ca-file
+              name: extension-apiserver-authentication
+              namespace: kube-system
               optional: true
         - name: CERT_DIR
           value: /api-server-cert
