@@ -60,6 +60,7 @@ eachother. The api-server itself does not use RBAC, but can either be used witho
 clients, or using a TLS client certificate when registering with the kubernetes API server. 
 
 Other notable changes to existing API:
+
 * `addressSpace` field is now mandatory for addresses
 * The `namespace` field of an address space will now be the `project namespace` of the user creating
   the instance. An annotation will be added to the address space.
