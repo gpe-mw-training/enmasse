@@ -18,9 +18,8 @@ spec:
         - name: CLIENT_CA
           valueFrom:
             configMapKeyRef:
-              key: client-ca-file
-              name: extension-apiserver-authentication
-              namespace: kube-system
+              key: ca.crt
+              name: api-server-client-ca
               optional: true
         - name: CERT_DIR
           value: /api-server-cert
