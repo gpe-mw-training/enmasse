@@ -103,7 +103,8 @@ public class HTTPServer extends AbstractVerticle {
             options.setSsl(true);
 
             if (clientCa != null) {
-                options.setPemTrustOptions(new PemTrustOptions()
+                log.info("Enabling client authentication");
+                options.setTrustOptions(new PemTrustOptions()
                         .addCertValue(Buffer.buffer(clientCa)));
                 options.setClientAuth(ClientAuth.REQUIRED);
             }
