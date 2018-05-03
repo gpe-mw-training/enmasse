@@ -3,6 +3,7 @@
     namespace: enmasseci
     multitenant: true
     enable_rbac: true
+    service_catalog: true
     keycloak_admin_password: admin
     authentication_services:
       - standard

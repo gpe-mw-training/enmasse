@@ -27,7 +27,7 @@ if [ $DOCKER_STATUS != "active" ]; then
     sudo systemctl restart ${DOCKER}
 fi
 
-oc cluster up $OC_CLUSTER_ARGS
+oc cluster up --service-broker $OC_CLUSTER_ARGS
 if [ ! $? -ne 0 ]; then
     echo "WARN: openshift cluster didn't start properly, wait for 30s and try to restart..."
     sleep 30
