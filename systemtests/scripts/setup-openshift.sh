@@ -32,7 +32,7 @@ if [ ! $? -ne 0 ]; then
     echo "WARN: openshift cluster didn't start properly, wait for 30s and try to restart..."
     sleep 30
     oc cluster down
-    oc cluster up ${OC_CLUSTER_ARGS}
+    oc cluster up --service-catalog "${OC_CLUSTER_ARGS}"
 fi
 oc login -u system:admin
 
