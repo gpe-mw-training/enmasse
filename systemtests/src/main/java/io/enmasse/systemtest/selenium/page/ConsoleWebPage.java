@@ -2,11 +2,13 @@
  * Copyright 2018, EnMasse authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.enmasse.systemtest.selenium;
+package io.enmasse.systemtest.selenium.page;
 
 
 import com.paulhammant.ngwebdriver.ByAngular;
 import io.enmasse.systemtest.*;
+import io.enmasse.systemtest.selenium.SeleniumProvider;
+import io.enmasse.systemtest.selenium.resources.*;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.slf4j.Logger;
@@ -27,7 +29,7 @@ public class ConsoleWebPage {
     private AddressApiClient addressApiClient;
     private AddressSpace defaultAddressSpace;
     private ToolbarType toolbarType;
-    private LoginWebPage loginWebPage;
+    private ConsoleLoginWebPage consoleLoginWebPage;
     private KeycloakCredentials credentials;
 
     public ConsoleWebPage(SeleniumProvider selenium, String consoleRoute, AddressApiClient addressApiClient, AddressSpace defaultAddressSpace, KeycloakCredentials credentials) {
@@ -35,7 +37,7 @@ public class ConsoleWebPage {
         this.consoleRoute = consoleRoute;
         this.addressApiClient = addressApiClient;
         this.defaultAddressSpace = defaultAddressSpace;
-        this.loginWebPage = new LoginWebPage(selenium);
+        this.consoleLoginWebPage = new ConsoleLoginWebPage(selenium);
         this.credentials = credentials;
 
     }
@@ -50,8 +52,8 @@ public class ConsoleWebPage {
         selenium.getDriver().get(consoleRoute);
         selenium.getAngularDriver().waitForAngularRequestsToFinish();
         selenium.takeScreenShot();
-        if (!loginWebPage.login(credentials.getUsername(), credentials.getPassword()))
-            throw new IllegalAccessException(loginWebPage.getAlertMessage());
+        if (!consoleLoginWebPage.login(credentials.getUsername(), credentials.getPassword()))
+            throw new IllegalAccessException(consoleLoginWebPage.getAlertMessage());
     }
 
     private WebElement getNavigateMenu() throws Exception {
