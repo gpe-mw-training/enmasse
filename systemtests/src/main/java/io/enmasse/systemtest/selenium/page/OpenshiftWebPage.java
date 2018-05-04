@@ -5,6 +5,7 @@
 package io.enmasse.systemtest.selenium.page;
 
 
+import io.enmasse.systemtest.AddressSpaceType;
 import io.enmasse.systemtest.CustomLogger;
 import io.enmasse.systemtest.KeycloakCredentials;
 import io.enmasse.systemtest.selenium.SeleniumProvider;
@@ -13,7 +14,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.slf4j.Logger;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -72,17 +72,27 @@ public class OpenshiftWebPage {
         return getOrderServiceModalWindow().findElement(By.className("dropdown"));
     }
 
-    public List<WebElement> getItemsFromDropDown() {
-        List<WebElement> dropdownItems = new LinkedList<>();
-        dropdownItems.add(getAddToProjectDropDown()
-                .findElement(By.className("dropdown-menu")).findElements(By.tagName("li")).get(0)); //new project
-        dropdownItems.addAll(getAddToProjectDropDown()
-                .findElement(By.className("dropdown-menu")).findElements(By.tagName("li")).get(1).findElements(By.className("ui-select-choices-row")));
+    private WebElement getItemFromAddToProjectDropDown(String projectName) {
+        List<WebElement> result = getItemsFromAddToProjectDropDown().stream()
+                .filter(item -> projectName.equals(getTextFromAddToProjectDropDownItem(item))).collect(Collectors.toList());
+        return result.size() > 0 ? result.get(0) : null;
+    }
+
+    private List<WebElement> getItemsFromAddToProjectDropDown() {
+        List<WebElement> dropdownItems = getAddToProjectDropDown()
+                .findElement(By.className("dropdown-menu")).findElements(By.className("ui-select-choices-row"));
         for (WebElement el : dropdownItems) {
-            log.info("Got add to project choice: {}",
-                    el.findElement(By.className("ui-select-choices-row-inner")).findElement(By.tagName("span")).getText());
+            log.info("Got add to project choice: {}", getTextFromAddToProjectDropDownItem(el));
         }
         return dropdownItems;
+    }
+
+    private String getTextFromAddToProjectDropDownItem(WebElement item) {
+        return item.findElement(By.className("ui-select-choices-row-inner")).findElement(By.tagName("span")).getText();
+    }
+
+    private List<WebElement> getBindingRadioItems() {
+        return getOrderServiceModalWindow().findElement(By.className("radio")).findElements(By.tagName("label"));
     }
 
     //================================================================================================
@@ -113,7 +123,7 @@ public class OpenshiftWebPage {
         selenium.getDriverWait().until(ExpectedConditions.visibilityOfElementLocated(By.className("services-no-sub-categories")));
     }
 
-    public void clickOnCreateBrokered() throws Exception {
+    private void clickOnCreateBrokered() throws Exception {
         selenium.clickOnItem(getServiceFromCatalog("EnMasse (brokered)"));
     }
 
@@ -129,7 +139,39 @@ public class OpenshiftWebPage {
         selenium.clickOnItem(getBackButton());
     }
 
-    public void clickOnAddToProjectDropdown() throws Exception {
+    private void clickOnAddToProjectDropdown() throws Exception {
         selenium.clickOnItem(getAddToProjectDropDown(), "Add to project dropdown");
+    }
+
+    public void createAddressSpace(AddressSpaceType type, String name, String projectName) throws Exception {
+        if (type == AddressSpaceType.BROKERED) {
+            createAddressSpaceBrokered(name, projectName);
+        }
+    }
+
+    private void createAddressSpaceBrokered(String name, String projectName) throws Exception {
+        clickOnCreateBrokered();
+        next();
+        clickOnAddToProjectDropdown();
+        WebElement project = getItemFromAddToProjectDropDown(projectName);
+        if (project != null) {
+            log.info("Project is present address space will be added into them: {}", projectName);
+            selenium.clickOnItem(project);
+        } else {
+            log.info("Project is not present address space will be added into new");
+            createProjectInWizard(projectName);
+        }
+        selenium.fillInputItem(getOrderServiceModalWindow().findElement(By.tagName("catalog-parameters")).findElement(By.id("name")),
+                name);
+        next();
+        next();
+    }
+
+    private void createProjectInWizard(String projectName) throws Exception {
+        selenium.clickOnItem(getItemFromAddToProjectDropDown("Create Project"));
+        selenium.fillInputItem(getOrderServiceModalWindow().findElement(By.tagName("select-project")).findElement(By.id("name")),
+                projectName);
+        selenium.fillInputItem(getOrderServiceModalWindow().findElement(By.tagName("select-project")).findElement(By.id("displayName")),
+                projectName);
     }
 }

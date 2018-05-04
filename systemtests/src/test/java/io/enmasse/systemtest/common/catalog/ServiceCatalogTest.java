@@ -32,17 +32,14 @@ class ServiceCatalogTest extends TestBase implements ISeleniumProviderFirefox {
         selenium.tearDownDrivers();
     }
 
-    //TODO: remove this (it is only for base test that oc console + selenium works)
     @Test
-    void testOpenOCPage() throws Exception {
+    void testCreateBrokeredAddressSpace() throws Exception {
         OpenshiftWebPage ocPage = new OpenshiftWebPage(selenium, getOCConsoleRoute(),
                 new KeycloakCredentials("developer", "developer"));
         ocPage.openOpenshiftPage();
         ocPage.getServicesFromCatalog();
-        ocPage.clickOnCreateBrokered();
-        ocPage.next();
-        ocPage.clickOnAddToProjectDropdown();
-        ocPage.getItemsFromDropDown();
+        //ocPage.createAddressSpace(AddressSpaceType.BROKERED, "brokered", "user");
+        //TestUtils.waitForAddressSpaceReady(addressApiClient, "brokered");
     }
 
 }
