@@ -18,6 +18,7 @@ public class ApiServerOptions {
     private String certDir;
     private Duration resyncInterval;
     private String clientCa;
+    private boolean enableRbac;
 
     public String getNamespace() {
         return namespace;
@@ -58,6 +59,8 @@ public class ApiServerOptions {
                 .map(i -> Duration.ofSeconds(Long.parseLong(i)))
                 .orElse(Duration.ofMinutes(5)));
 
+        options.setEnableRbac(Boolean.parseBoolean(getEnv(env, "ENABLE_RBAC").orElse("false")));
+
         return options;
     }
 
@@ -79,5 +82,13 @@ public class ApiServerOptions {
 
     public String getClientCa() {
         return clientCa;
+    }
+
+    public boolean isEnableRbac() {
+        return enableRbac;
+    }
+
+    public void setEnableRbac(boolean enableRbac) {
+        this.enableRbac = enableRbac;
     }
 }

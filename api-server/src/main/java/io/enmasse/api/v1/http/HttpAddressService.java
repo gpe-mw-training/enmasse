@@ -4,6 +4,8 @@
  */
 package io.enmasse.api.v1.http;
 
+import io.enmasse.api.auth.RbacSecurityContext;
+import io.enmasse.api.auth.ResourceVerb;
 import io.enmasse.api.common.Exceptions;
 import io.enmasse.api.common.SchemaProvider;
 import io.enmasse.api.v1.AddressApiHelper;
@@ -40,11 +42,18 @@ public class HttpAddressService {
         }
     }
 
+    private static void verifyAuthorized(SecurityContext securityContext, String namespace, ResourceVerb verb) {
+        if (!securityContext.isUserInRole(RbacSecurityContext.rbacToRole(namespace, verb, "addresses"))) {
+            throw Exceptions.notAuthorizedException();
+        }
+    }
+
     @GET
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response getAddressList(@PathParam("namespace") String namespace, @QueryParam("address") String address, @QueryParam("labelSelector") String labelSelector) throws Exception {
+    public Response getAddressList(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @QueryParam("address") String address, @QueryParam("labelSelector") String labelSelector) throws Exception {
         return doRequest("Error listing addresses",() -> {
+            verifyAuthorized(securityContext, namespace, ResourceVerb.list);
             if (address == null) {
                 if (labelSelector != null) {
                     Map<String, String> labels = AddressApiHelper.parseLabelSelector(labelSelector);
@@ -70,17 +79,19 @@ public class HttpAddressService {
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
     @Path("{addressName}")
-    public Response getAddress(@PathParam("namespace") String namespace, @PathParam("addressName") String address) throws Exception {
-        return doRequest("Error getting address",
-                () -> Response.ok(apiHelper.getAddress(namespace, address)
-                        .orElseThrow(() -> Exceptions.notFoundException("Address " + address + " not found")))
-                        .build());
+    public Response getAddress(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @PathParam("addressName") String address) throws Exception {
+        return doRequest("Error getting address", () -> {
+            verifyAuthorized(securityContext, namespace, ResourceVerb.list);
+            return Response.ok(apiHelper.getAddress(namespace, address)
+                    .orElseThrow(() -> Exceptions.notFoundException("Address " + address + " not found")))
+                    .build();
+        });
     }
 
     @POST
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response createAddress(@Context UriInfo uriInfo, @PathParam("namespace") String namespace, @NotNull Address address) throws Exception {
+    public Response createAddress(@Context SecurityContext securityContext, @Context UriInfo uriInfo, @PathParam("namespace") String namespace, @NotNull Address address) throws Exception {
         checkNotNull(address);
         if (address.getNamespace() == null) {
             address = new Address.Builder(address)
@@ -89,6 +100,7 @@ public class HttpAddressService {
         }
         Address finalAddress = address;
         return doRequest("Error creating address", () -> {
+            verifyAuthorized(securityContext, namespace, ResourceVerb.create);
             Address created = apiHelper.createAddress(finalAddress);
             UriBuilder builder = uriInfo.getAbsolutePathBuilder();
             builder.path(created.getName());
@@ -105,7 +117,7 @@ public class HttpAddressService {
     @PUT
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response replaceAddresses(@PathParam("namespace") String namespace, @NotNull Address address) throws Exception {
+    public Response replaceAddresses(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @NotNull Address address) throws Exception {
         checkNotNull(address);
         if (address.getNamespace() == null) {
             address = new Address.Builder(address)
@@ -114,6 +126,7 @@ public class HttpAddressService {
         }
         Address finalAddress = address;
         return doRequest("Error updating address", () -> {
+            verifyAuthorized(securityContext, namespace, ResourceVerb.update);
             Address replaced = apiHelper.replaceAddress(finalAddress);
             return Response.ok(replaced).build();
         });
@@ -123,8 +136,9 @@ public class HttpAddressService {
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
     @Path("{addressName}")
-    public Response deleteAddress(@PathParam("namespace") String namespace, @PathParam("addressName") String addressName) throws Exception {
+    public Response deleteAddress(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @PathParam("addressName") String addressName) throws Exception {
         return doRequest("Error deleting address", () -> {
+            verifyAuthorized(securityContext, namespace, ResourceVerb.delete);
             apiHelper.deleteAddress(namespace, addressName);
             return Response.ok().build();
         });

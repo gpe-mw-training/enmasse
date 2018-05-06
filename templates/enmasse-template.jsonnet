@@ -8,8 +8,6 @@ local grafana = import "include/grafana.jsonnet";
 {
     "resources/grafana/grafana.json": grafana.grafana,
     "resources/prometheus/prometheus.json": prometheus.prometheus,
-    "resources/cluster-roles/enmasse-address-admin.json": roles.address_admin_role,
-    "resources/cluster-roles/enmasse-admin.json": roles.enmasse_admin_role,
     "resources/address-controller/deployment.json": addressController.deployment,
     "resources/api-server/service.json": apiServer.service,
     "resources/api-server/deployment.json": apiServer.deployment,

@@ -7,9 +7,11 @@ package io.enmasse.api.v1.http;
 import io.enmasse.address.model.AddressSpace;
 import io.enmasse.address.model.AddressSpaceList;
 import io.enmasse.address.model.AddressSpaceResolver;
+import io.enmasse.api.auth.RbacSecurityContext;
+import io.enmasse.api.auth.ResourceVerb;
+import io.enmasse.api.common.Exceptions;
 import io.enmasse.api.common.SchemaProvider;
 import io.enmasse.api.v1.AddressApiHelper;
-import io.enmasse.config.AnnotationKeys;
 import io.enmasse.k8s.api.AddressSpaceApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -44,10 +45,17 @@ public class HttpAddressSpaceService {
         }
     }
 
+    private static void verifyAuthorized(SecurityContext securityContext, String namespace, ResourceVerb verb) {
+        if (!securityContext.isUserInRole(RbacSecurityContext.rbacToRole(namespace, verb, "addressspaces"))) {
+            throw Exceptions.notAuthorizedException();
+        }
+    }
+
     @GET
     @Produces({MediaType.APPLICATION_JSON})
-    public Response getAddressSpaceList(@PathParam("namespace") String namespace, @QueryParam("labelSelector") String labelSelector) throws Exception {
+    public Response getAddressSpaceList(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @QueryParam("labelSelector") String labelSelector) throws Exception {
         return doRequest("Error getting address space list", () -> {
+            verifyAuthorized(securityContext, namespace, ResourceVerb.list);
             if (labelSelector != null) {
                 Map<String, String> labels = AddressApiHelper.parseLabelSelector(labelSelector);
                 return Response.ok(new AddressSpaceList(addressSpaceApi.listAddressSpacesWithLabels(namespace, labels))).build();
@@ -60,18 +68,21 @@ public class HttpAddressSpaceService {
     @GET
     @Produces({MediaType.APPLICATION_JSON})
     @Path("{addressSpace}")
-    public Response getAddressSpace(@PathParam("namespace") String namespace, @PathParam("addressSpace") String addressSpaceName) throws Exception {
-        return doRequest("Error getting address space " + addressSpaceName, () ->
-            addressSpaceApi.getAddressSpaceWithName(namespace, addressSpaceName)
+    public Response getAddressSpace(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @PathParam("addressSpace") String addressSpaceName) throws Exception {
+        return doRequest("Error getting address space " + addressSpaceName, () -> {
+            verifyAuthorized(securityContext, namespace, ResourceVerb.get);
+            return addressSpaceApi.getAddressSpaceWithName(namespace, addressSpaceName)
                     .map(addressSpace -> Response.ok(addressSpace).build())
-                    .orElseThrow(() -> new NotFoundException("Address space " + addressSpaceName + " not found")));
+                    .orElseThrow(() -> new NotFoundException("Address space " + addressSpaceName + " not found"));
+        });
     }
 
     @POST
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response createAddressSpace(@Context UriInfo uriInfo, @PathParam("namespace") String namespace, @NotNull  AddressSpace input) throws Exception {
+    public Response createAddressSpace(@Context SecurityContext securityContext, @Context UriInfo uriInfo, @PathParam("namespace") String namespace, @NotNull  AddressSpace input) throws Exception {
         return doRequest("Error creating address space " + input.getName(), () -> {
+            verifyAuthorized(securityContext, namespace, ResourceVerb.create);
             AddressSpaceResolver addressSpaceResolver = new AddressSpaceResolver(schemaProvider.getSchema());
             addressSpaceResolver.validate(input);
             addressSpaceApi.createAddressSpace(input);
@@ -85,8 +96,9 @@ public class HttpAddressSpaceService {
     @PUT
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response replaceAddressSpace(@PathParam("namespace") String namespace, @NotNull  AddressSpace input) throws Exception {
+    public Response replaceAddressSpace(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @NotNull  AddressSpace input) throws Exception {
         return doRequest("Error replacing address space " + input.getName(), () -> {
+            verifyAuthorized(securityContext, namespace, ResourceVerb.update);
             AddressSpaceResolver addressSpaceResolver = new AddressSpaceResolver(schemaProvider.getSchema());
             addressSpaceResolver.validate(input);
             addressSpaceApi.replaceAddressSpace(input);
@@ -98,8 +110,9 @@ public class HttpAddressSpaceService {
     @DELETE
     @Path("{addressSpace}")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response deleteAddressSpace(@PathParam("namespace") String namespace, @PathParam("addressSpace") String addressSpaceName) throws Exception {
+    public Response deleteAddressSpace(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @PathParam("addressSpace") String addressSpaceName) throws Exception {
         return doRequest("Error deleting address space " + addressSpaceName, () -> {
+            verifyAuthorized(securityContext, namespace, ResourceVerb.delete);
             AddressSpace addressSpace = addressSpaceApi.getAddressSpaceWithName(namespace, addressSpaceName)
                     .orElseThrow(() -> new NotFoundException("Unable to find address space " + addressSpaceName));
             addressSpaceApi.deleteAddressSpace(addressSpace);

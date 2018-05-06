@@ -50,7 +50,7 @@ public abstract class OSBServiceBase {
     }
 
     protected void verifyAuthorized(SecurityContext securityContext, ResourceVerb verb) {
-        if (!securityContext.isUserInRole(RbacSecurityContext.rbacToRole(authApi.getNamespace(), verb))) {
+        if (!securityContext.isUserInRole(RbacSecurityContext.rbacToRole(authApi.getNamespace(), verb, "configmaps"))) {
             throw Exceptions.notAuthorizedException();
         }
     }

@@ -5,6 +5,8 @@
 
 package io.enmasse.api.server;
 
+import io.enmasse.api.auth.AuthApi;
+import io.enmasse.api.auth.KubeAuthApi;
 import io.enmasse.api.common.CachingSchemaProvider;
 import io.enmasse.k8s.api.AddressSpaceApi;
 import io.enmasse.k8s.api.ConfigMapAddressSpaceApi;
@@ -37,8 +39,14 @@ public class ApiServer extends AbstractVerticle {
 
         AddressSpaceApi addressSpaceApi = new ConfigMapAddressSpaceApi(controllerClient);
 
+
+        AuthApi authApi = null;
+        if (options.isEnableRbac()) {
+            authApi = new KubeAuthApi(controllerClient, null, controllerClient.getConfiguration().getOauthToken());
+        }
+
         deployVerticles(startPromise,
-                new Deployment(new HTTPServer(addressSpaceApi, schemaProvider, options.getCertDir(), options.getClientCa()), new DeploymentOptions().setWorker(true)));
+                new Deployment(new HTTPServer(addressSpaceApi, schemaProvider, options.getCertDir(), options.getClientCa(), authApi), new DeploymentOptions().setWorker(true)));
     }
 
     private void deployVerticles(Future<Void> startPromise, Deployment ... deployments) {

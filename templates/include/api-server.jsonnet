@@ -67,7 +67,7 @@ local images = import "images.jsonnet";
                 {
                   "name": "CLIENT_CA",
                   "valueFrom": {
-                    "configMapKeyRef": {
+                    "secretKeyRef": {
                       "name": "api-server-client-ca",
                       "key": "ca.crt",
                       "optional": true
@@ -77,6 +77,16 @@ local images = import "images.jsonnet";
                 {
                   "name": "CERT_DIR",
                   "value": "/api-server-cert"
+                },
+                {
+                  "name": "ENABLE_RBAC",
+                  "valueFrom": {
+                    "configMapKeyRef": {
+                      "name": "api-server-config",
+                      "key": "enableRbac",
+                      "optional": true
+                    }
+                  }
                 }
               ],
               "ports": [
@@ -94,6 +104,16 @@ local images = import "images.jsonnet";
                   "path": "/healthz",
                   "scheme": "HTTP",
                   "port": "http"
+                }
+              },
+              "resources": {
+                "requests": {
+                  "cpu": "250m",
+                  "memory": "64Mi"
+                },
+                "limits": {
+                  "cpu": "500m",
+                  "memory": "128Mi"
                 }
               }
             }

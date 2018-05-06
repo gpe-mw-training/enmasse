@@ -37,7 +37,7 @@ public class ConfigMapAddressSpaceApi implements AddressSpaceApi, ListerWatcher<
     }
 
     private static String getConfigMapName(String namespace, String name) {
-        return name; // TODO: Find a way to update this
+        return namespace + name;
     }
 
     @Override

@@ -112,8 +112,7 @@ public class ConfigMapAddressApi implements AddressApi, ListerWatcher<ConfigMap,
     }
 
     private static String getConfigMapName(String namespace, String name) {
-        // TODO: For multitenancy, find a way for multiple maps to coexist
-        return name;
+        return namespace + name;
     }
 
     private ConfigMap create(Address address) {

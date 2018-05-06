@@ -16,11 +16,15 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import java.util.concurrent.Callable;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class HttpAddressServiceTest {
     private HttpAddressService addressService;
@@ -29,11 +33,14 @@ public class HttpAddressServiceTest {
     private Address q1;
     private Address a1;
     private DefaultExceptionMapper exceptionMapper = new DefaultExceptionMapper();
+    private SecurityContext securityContext;
 
     @Before
     public void setup() {
         addressSpaceApi = new TestAddressSpaceApi();
         this.addressService = new HttpAddressService(addressSpaceApi, new TestSchemaProvider());
+        securityContext = mock(SecurityContext.class);
+        when(securityContext.isUserInRole(any())).thenReturn(true);
 
         AddressSpace addressSpace = new AddressSpace.Builder()
                 .setName("myspace")
@@ -71,7 +78,7 @@ public class HttpAddressServiceTest {
 
     @Test
     public void testList() {
-        Response response = invoke(() -> addressService.getAddressList(null, null, null));
+        Response response = invoke(() -> addressService.getAddressList(securityContext, null, null, null));
 
         assertThat(response.getStatus(), is(200));
         AddressList list = (AddressList) response.getEntity();
@@ -83,7 +90,7 @@ public class HttpAddressServiceTest {
 
     @Test
     public void testGetByAddress() {
-        Response response = invoke(() -> addressService.getAddressList(null, "A1", null));
+        Response response = invoke(() -> addressService.getAddressList(securityContext, null, "A1", null));
 
         assertThat(response.getStatus(), is(200));
         Address address = (Address) response.getEntity();
@@ -93,7 +100,7 @@ public class HttpAddressServiceTest {
 
     @Test
     public void testGetByAddressNotFound() {
-        Response response = invoke(() -> addressService.getAddressList(null,"b1", null));
+        Response response = invoke(() -> addressService.getAddressList(securityContext, null,"b1", null));
 
         assertThat(response.getStatus(), is(404));
     }
@@ -101,13 +108,13 @@ public class HttpAddressServiceTest {
     @Test
     public void testListException() {
         addressApi.throwException = true;
-        Response response = invoke(() -> addressService.getAddressList(null, null, null));
+        Response response = invoke(() -> addressService.getAddressList(securityContext, null, null, null));
         assertThat(response.getStatus(), is(500));
     }
 
     @Test
     public void testGet() {
-        Response response = invoke(() -> addressService.getAddress(null, "q1"));
+        Response response = invoke(() -> addressService.getAddress(securityContext, null, "q1"));
         assertThat(response.getStatus(), is(200));
         Address address = (Address) response.getEntity();
 
@@ -117,13 +124,13 @@ public class HttpAddressServiceTest {
     @Test
     public void testGetException() {
         addressApi.throwException = true;
-        Response response = invoke(() -> addressService.getAddress(null, "q1"));
+        Response response = invoke(() -> addressService.getAddress(securityContext, null, "q1"));
         assertThat(response.getStatus(), is(500));
     }
 
     @Test
     public void testGetUnknown() {
-        Response response = invoke(() -> addressService.getAddress(null, "doesnotexist"));
+        Response response = invoke(() -> addressService.getAddress(securityContext, null, "doesnotexist"));
         assertThat(response.getStatus(), is(404));
     }
 
@@ -136,7 +143,7 @@ public class HttpAddressServiceTest {
                 .setPlan("plan1")
                 .setAddressSpace("myspace")
                 .build();
-        Response response = invoke(() -> addressService.createAddress(new ResteasyUriInfo("http://localhost:8443/", null, "/"), "ns", a2));
+        Response response = invoke(() -> addressService.createAddress(securityContext, new ResteasyUriInfo("http://localhost:8443/", null, "/"), "ns", a2));
         assertThat(response.getStatus(), is(201));
 
         Address a2ns = new Address.Builder(a2).setNamespace("ns").build();
@@ -152,13 +159,13 @@ public class HttpAddressServiceTest {
                 .setAddressSpace("myspace")
                 .setType("anycast")
                 .build();
-        Response response = invoke(() -> addressService.createAddress(null, null, a2));
+        Response response = invoke(() -> addressService.createAddress(securityContext, null, null, a2));
         assertThat(response.getStatus(), is(500));
     }
 
     @Test
     public void testDelete() {
-        Response response = invoke(() -> addressService.deleteAddress("ns", "a1"));
+        Response response = invoke(() -> addressService.deleteAddress(securityContext, "ns", "a1"));
         assertThat(response.getStatus(), is(200));
 
         assertThat(addressApi.listAddresses(null), hasItem(q1));
@@ -168,7 +175,7 @@ public class HttpAddressServiceTest {
     @Test
     public void testDeleteException() {
         addressApi.throwException = true;
-        Response response = invoke(() -> addressService.deleteAddress("ns", "a1"));
+        Response response = invoke(() -> addressService.deleteAddress(securityContext, "ns", "a1"));
         assertThat(response.getStatus(), is(500));
     }
 }
