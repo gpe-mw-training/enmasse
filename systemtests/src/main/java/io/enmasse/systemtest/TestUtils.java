@@ -216,23 +216,33 @@ public class TestUtils {
      * @param kubernetes   client for manipulation with kubernetes cluster
      * @param budget       timeout for deploy
      * @param addressSpace AddressSpace for deploy destinations
-     * @param httpMethod   PUT, POST
      * @param destinations
      * @throws Exception
      */
-    public static void deploy(AddressApiClient apiClient, Kubernetes kubernetes, TimeoutBudget budget, AddressSpace addressSpace, HttpMethod httpMethod, Destination... destinations) throws Exception {
+    public static void setAddresses(AddressApiClient apiClient, Kubernetes kubernetes, TimeoutBudget budget, AddressSpace addressSpace, boolean wait, Destination... destinations) throws Exception {
         apiClient.setAddresses(addressSpace, destinations);
-        JsonObject addrSpaceObj = apiClient.getAddressSpace(addressSpace.getName());
-        if (getAddressSpaceType(addrSpaceObj).equals("standard")) {
-            if (destinations.length == 0) {
-                waitForExpectedPods(kubernetes, addressSpace, kubernetes.getExpectedPods(addressSpace.getPlan()), budget);
+        if (wait) {
+            JsonObject addrSpaceObj = apiClient.getAddressSpace(addressSpace.getName());
+            if (getAddressSpaceType(addrSpaceObj).equals("standard")) {
+                if (destinations.length == 0) {
+                    waitForExpectedPods(kubernetes, addressSpace, kubernetes.getExpectedPods(addressSpace.getPlan()), budget);
+                }
             }
+            waitForDestinationsReady(apiClient, addressSpace, budget, destinations);
         }
-        waitForDestinationsReady(apiClient, addressSpace, budget, destinations);
     }
 
-    public static void deploy(AddressApiClient apiClient, AddressSpace addressSpace, HttpMethod httpMethod, Destination... destinations) throws Exception {
-        apiClient.deploy(addressSpace, httpMethod, destinations);
+    public static void appendAddresses(AddressApiClient apiClient, Kubernetes kubernetes, TimeoutBudget budget, AddressSpace addressSpace, boolean wait, Destination... destinations) throws Exception {
+        apiClient.appendAddresses(addressSpace, destinations);
+        if (wait) {
+            JsonObject addrSpaceObj = apiClient.getAddressSpace(addressSpace.getName());
+            if (getAddressSpaceType(addrSpaceObj).equals("standard")) {
+                if (destinations.length == 0) {
+                    waitForExpectedPods(kubernetes, addressSpace, kubernetes.getExpectedPods(addressSpace.getPlan()), budget);
+                }
+            }
+            waitForDestinationsReady(apiClient, addressSpace, budget, destinations);
+        }
     }
 
     /**

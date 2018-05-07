@@ -215,11 +215,7 @@ public abstract class TestBase implements ITestBase, ITestSeparator {
     }
 
     protected void appendAddresses(AddressSpace addressSpace, boolean wait, TimeoutBudget timeout, Destination... destinations) throws Exception {
-        if (wait) {
-            TestUtils.deploy(addressApiClient, kubernetes, timeout, addressSpace, HttpMethod.POST, destinations);
-        } else {
-            TestUtils.deploy(addressApiClient, addressSpace, HttpMethod.POST, destinations);
-        }
+        TestUtils.appendAddresses(addressApiClient, kubernetes, timeout, addressSpace, wait, destinations);
         logCollector.collectConfigMaps(addressSpace.getNamespace());
     }
 
@@ -231,7 +227,7 @@ public abstract class TestBase implements ITestBase, ITestSeparator {
 
 
     protected void setAddresses(AddressSpace addressSpace, TimeoutBudget timeout, Destination... destinations) throws Exception {
-        TestUtils.deploy(addressApiClient, kubernetes, timeout, addressSpace, HttpMethod.PUT, destinations);
+        TestUtils.setAddresses(addressApiClient, kubernetes, timeout, addressSpace, true, destinations);
         logCollector.collectConfigMaps(addressSpace.getNamespace());
     }
 

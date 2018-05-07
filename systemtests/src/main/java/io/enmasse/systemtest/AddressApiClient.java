@@ -280,6 +280,21 @@ public class AddressApiClient {
         });
     }
 
+    public void appendAddresses(AddressSpace addressSpace, Destination... destinations) throws Exception {
+        JsonObject response = getAddresses(addressSpace, Optional.empty());
+        Set<Destination> current = TestUtils.convertToListAddress(response, Collections.emptyList(), Destination.class).stream()
+                .filter(d -> d.getAddressSpace().equals(addressSpace.getName()))
+                .collect(Collectors.toSet());
+
+        Set<Destination> desired = Sets.newHashSet(destinations);
+
+        Set<Destination> toCreate = Sets.difference(desired, current);
+
+        for (Destination destination : toCreate) {
+            createAddress(addressSpace, destination);
+        }
+    }
+
     public void setAddresses(AddressSpace addressSpace, Destination... destinations) throws Exception {
         JsonObject response = getAddresses(addressSpace, Optional.empty());
         Set<Destination> current = TestUtils.convertToListAddress(response, Collections.emptyList(), Destination.class).stream()
