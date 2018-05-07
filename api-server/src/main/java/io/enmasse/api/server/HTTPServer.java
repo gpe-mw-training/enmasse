@@ -37,7 +37,7 @@ import java.io.IOException;
  */
 public class HTTPServer extends AbstractVerticle {
     public static final int PORT = 8080;
-    public static final int SECURE_PORT = 8883;
+    public static final int SECURE_PORT = 8443;
     private static final Logger log = LoggerFactory.getLogger(HTTPServer.class.getName());
     private final AddressSpaceApi addressSpaceApi;
     private final SchemaProvider schemaProvider;
