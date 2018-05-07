@@ -15,6 +15,7 @@
 # further it will use the user `developer` and project `myproject`, asking
 # for a login when appropriate.
 # for further parameters please see the help text.
+set -x
 
 SCRIPTDIR=`dirname $0`
 RESOURCE_DIR=${SCRIPTDIR}/resources
@@ -215,7 +216,7 @@ elif [ $MODE == "multitenant" ]; then
     runcmd "$CMD create -n ${NAMESPACE} -f $RESOURCE_DIR/resource-definitions/resource-definitions.yaml" "Create resource definitions"
     runcmd "$CMD create -n ${NAMESPACE} -f $RESOURCE_DIR/plans/standard-plans.yaml" "Create standard address space plans"
     runcmd "$CMD create -n ${NAMESPACE} -f $RESOURCE_DIR/plans/brokered-plans.yaml" "Create brokered address space plans"
-    runcmd "$CMD create -n ${NAMESPACE} configmap api-server-config -n ${NAMESPACE} --from-literal=enableRbac=true" "Create api-server configmap"
+    runcmd "$CMD create -n ${NAMESPACE} configmap api-server-config --from-literal=enableRbac=true" "Create api-server configmap"
 else
     echo "Unknown deployment mode $MODE"
     exit 1
