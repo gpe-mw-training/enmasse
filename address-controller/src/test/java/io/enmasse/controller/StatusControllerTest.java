@@ -25,7 +25,7 @@ public class StatusControllerTest {
     public void testStatusControllerSetsReady() throws Exception {
         InfraResourceFactory infraResourceFactory = mock(InfraResourceFactory.class);
         Kubernetes kubernetes = mock(Kubernetes.class);
-        when(kubernetes.withNamespace(eq("enmasse-myspace"))).thenReturn(kubernetes);
+        when(kubernetes.withNamespace(eq("enmasse-mynamespace-myspace"))).thenReturn(kubernetes);
 
         Deployment deployment = new DeploymentBuilder()
                 .withNewMetadata()
@@ -58,7 +58,7 @@ public class StatusControllerTest {
     public void testStatusControllerSetsNotReady() throws Exception {
         InfraResourceFactory infraResourceFactory = mock(InfraResourceFactory.class);
         Kubernetes kubernetes = mock(Kubernetes.class);
-        when(kubernetes.withNamespace(eq("enmasse-myspace"))).thenReturn(kubernetes);
+        when(kubernetes.withNamespace(eq("enmasse-mynamespace-myspace"))).thenReturn(kubernetes);
 
         Deployment deployment = new DeploymentBuilder()
                 .withNewMetadata()
