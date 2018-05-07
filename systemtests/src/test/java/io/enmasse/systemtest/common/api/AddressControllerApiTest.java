@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static io.enmasse.systemtest.TestTag.isolated;
@@ -98,8 +99,8 @@ class AddressControllerApiTest extends TestBase {
             assertThat("No addresses were created, so list should be empty!",
                     TestUtils.convertToListAddress(
                             sendRestApiRequest(HttpMethod.GET, url, Optional.empty()),
-                            new ArrayList<>(),
-                            Address.class).size(),
+                            Address.class,
+                            object -> true).size(),
                     is(0));
         }
     }
