@@ -267,7 +267,7 @@ public class AddressSpace {
             Objects.requireNonNull(status, "status not set");
 
             if (!annotations.containsKey(AnnotationKeys.NAMESPACE)) {
-                annotations.put(AnnotationKeys.NAMESPACE, "enmasse-" + name);
+                annotations.put(AnnotationKeys.NAMESPACE, KubeUtil.sanitizeName("enmasse-" + namespace + "-" + name));
             }
 
             return new AddressSpace(name, namespace, type, selfLink, creationTimestamp, resourceVersion, endpointList, plan, authenticationService, status, uid, labels, annotations);

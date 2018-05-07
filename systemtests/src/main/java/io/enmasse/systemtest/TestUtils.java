@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -387,7 +388,7 @@ public class TestUtils {
                                                     Optional<String> addressName, List<String> skipAddresses) throws Exception {
         JsonObject response = apiClient.getAddresses(addressSpace, addressName);
         CompletableFuture<List<String>> listOfAddresses = new CompletableFuture<>();
-        listOfAddresses.complete(convertToListAddress(response, skipAddresses, String.class));
+        listOfAddresses.complete(convertToListAddress(response, String.class, object -> !skipAddresses.contains(object.getJsonObject("spec").getString("address"))));
         return listOfAddresses;
     }
 
@@ -398,7 +399,7 @@ public class TestUtils {
                                                             Optional<String> addressName, List<String> skipAddresses) throws Exception {
         JsonObject response = apiClient.getAddresses(addressSpace, addressName);
         CompletableFuture<List<Address>> listOfAddresses = new CompletableFuture<>();
-        listOfAddresses.complete(convertToListAddress(response, skipAddresses, Address.class));
+        listOfAddresses.complete(convertToListAddress(response, Address.class, object -> !skipAddresses.contains(object.getJsonObject("spec").getString("address"))));
         return listOfAddresses;
     }
 
@@ -409,7 +410,7 @@ public class TestUtils {
                                                                    Optional<String> addressName, List<String> skipAddresses) throws Exception {
         JsonObject response = apiClient.getAddresses(addressSpace, addressName);
         CompletableFuture<List<Destination>> listOfAddresses = new CompletableFuture<>();
-        listOfAddresses.complete(convertToListAddress(response, skipAddresses, Destination.class));
+        listOfAddresses.complete(convertToListAddress(response, Destination.class, object -> !skipAddresses.contains(object.getJsonObject("spec").getString("address"))));
         return listOfAddresses;
     }
 
@@ -443,17 +444,15 @@ public class TestUtils {
      * @param htmlResponse JsonObject with specified structure returned from rest api
      * @return list of addresses
      */
-    public static <T> List<T> convertToListAddress(JsonObject htmlResponse, List<String> skipAddresses, Class<T> clazz) {
+    public static <T> List<T> convertToListAddress(JsonObject htmlResponse, Class<T> clazz, Predicate<JsonObject> filter) {
         if (htmlResponse != null) {
             String kind = htmlResponse.getString("kind");
             List<T> addresses = new ArrayList<>();
-            String destinationAddr;
             switch (kind) {
                 case "Address":
-                    destinationAddr = htmlResponse.getJsonObject("spec").getString("address");
-                    if (!skipAddresses.contains(destinationAddr)) {
+                    if (filter.test(htmlResponse)) {
                         if (clazz.equals(String.class)) {
-                            addresses.add((T) destinationAddr);
+                            addresses.add((T) htmlResponse.getJsonObject("spec").getString("address"));
                         } else if (clazz.equals(Address.class)) {
                             addresses.add((T) getAddressObject(htmlResponse));
                         } else if (clazz.equals(Destination.class)) {
@@ -465,10 +464,9 @@ public class TestUtils {
                     JsonArray items = htmlResponse.getJsonArray("items");
                     if (items != null) {
                         for (int i = 0; i < items.size(); i++) {
-                            destinationAddr = items.getJsonObject(i).getJsonObject("spec").getString("address");
-                            if (!skipAddresses.contains(destinationAddr)) {
+                            if (filter.test(items.getJsonObject(i))) {
                                 if (clazz.equals(String.class)) {
-                                    addresses.add((T) destinationAddr);
+                                    addresses.add((T) items.getJsonObject(i).getJsonObject("spec").getString("address"));
                                 } else if (clazz.equals(Address.class)) {
                                     addresses.add((T) getAddressObject(items.getJsonObject(i)));
                                 } else if (clazz.equals(Destination.class)) {

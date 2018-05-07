@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class AddressApiClient {
@@ -201,24 +202,32 @@ public class AddressApiClient {
      * give you JsonObject with AddressesList or Address kind
      *
      *
-     * @param addressSpace
      * @param addressName  name of address
      * @return
      * @throws Exception
      */
     public JsonObject getAddresses(AddressSpace addressSpace, Optional<String> addressName) throws Exception {
-        StringBuilder path = new StringBuilder();
-        path.append(addressName.isPresent() ? "/" + addressName.get() : "");
+        String path = addressPath + (addressName.map(s -> "/" + s).orElse(""));
         log.info("GET-addresses: path {}; ", path);
 
         return doRequestNTimes(initRetry, () -> {
             CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
-            client.get(endpoint.getPort(), endpoint.getHost(), path.toString())
+            client.get(endpoint.getPort(), endpoint.getHost(), path)
                     .putHeader(HttpHeaders.AUTHORIZATION.toString(), authzString)
                     .as(BodyCodec.jsonObject())
                     .timeout(20_000)
                     .send(ar -> responseHandler(ar, responsePromise, "Error: get addresses"));
-            return responsePromise.get(30, TimeUnit.SECONDS);
+            JsonObject addressList = responsePromise.get(30, TimeUnit.SECONDS);
+            JsonArray items = addressList.getJsonArray("items");
+            JsonArray filteredItems = new JsonArray();
+            for (int i = 0; i < items.size(); i++) {
+                JsonObject entry = items.getJsonObject(i);
+                if (addressSpace.getName().equals(entry.getJsonObject("metadata").getString("addressSpace"))) {
+                    filteredItems.add(entry);
+                }
+            }
+            addressList.put("items", filteredItems);
+            return addressList;
         });
     }
 
@@ -251,10 +260,8 @@ public class AddressApiClient {
      */
     public void deleteAddresses(AddressSpace addressSpace, Destination... destinations) throws Exception {
         if (destinations.length == 0) {
-            for (Destination destination : TestUtils.convertToListAddress(getAddresses(addressSpace, Optional.empty()), Collections.emptyList(), Destination.class)) {
-                if (addressSpace.getName().equals(destination.getAddressSpace())) {
-                    deleteAddress(destination);
-                }
+            for (Destination destination : TestUtils.convertToListAddress(getAddresses(addressSpace, Optional.empty()), Destination.class, object -> true)) {
+                deleteAddress(destination);
             }
         } else {
             for (Destination destination : destinations) {
@@ -282,7 +289,7 @@ public class AddressApiClient {
 
     public void appendAddresses(AddressSpace addressSpace, Destination... destinations) throws Exception {
         JsonObject response = getAddresses(addressSpace, Optional.empty());
-        Set<Destination> current = TestUtils.convertToListAddress(response, Collections.emptyList(), Destination.class).stream()
+        Set<Destination> current = TestUtils.convertToListAddress(response, Destination.class, entries -> true).stream()
                 .filter(d -> d.getAddressSpace().equals(addressSpace.getName()))
                 .collect(Collectors.toSet());
 
@@ -297,9 +304,7 @@ public class AddressApiClient {
 
     public void setAddresses(AddressSpace addressSpace, Destination... destinations) throws Exception {
         JsonObject response = getAddresses(addressSpace, Optional.empty());
-        Set<Destination> current = TestUtils.convertToListAddress(response, Collections.emptyList(), Destination.class).stream()
-                .filter(d -> d.getAddressSpace().equals(addressSpace.getName()))
-                .collect(Collectors.toSet());
+        Set<Destination> current = new HashSet<>(TestUtils.convertToListAddress(response, Destination.class, object -> true));
 
         Set<Destination> desired = Sets.newHashSet(destinations);
 
