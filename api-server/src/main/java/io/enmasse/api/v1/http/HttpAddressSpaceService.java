@@ -83,10 +83,16 @@ public class HttpAddressSpaceService {
     public Response createAddressSpace(@Context SecurityContext securityContext, @Context UriInfo uriInfo, @PathParam("namespace") String namespace, @NotNull  AddressSpace input) throws Exception {
         return doRequest("Error creating address space " + input.getName(), () -> {
             verifyAuthorized(securityContext, namespace, ResourceVerb.create);
+            AddressSpace addressSpace = input;
+            if (addressSpace.getNamespace() == null) {
+                addressSpace = new AddressSpace.Builder(addressSpace)
+                        .setNamespace(namespace)
+                        .build();
+            }
             AddressSpaceResolver addressSpaceResolver = new AddressSpaceResolver(schemaProvider.getSchema());
-            addressSpaceResolver.validate(input);
-            addressSpaceApi.createAddressSpace(input);
-            AddressSpace created = addressSpaceApi.getAddressSpaceWithName(namespace, input.getName()).orElse(input);
+            addressSpaceResolver.validate(addressSpace);
+            addressSpaceApi.createAddressSpace(addressSpace);
+            AddressSpace created = addressSpaceApi.getAddressSpaceWithName(namespace, addressSpace.getName()).orElse(addressSpace);
             UriBuilder builder = uriInfo.getAbsolutePathBuilder();
             builder.path(created.getName());
             return Response.created(builder.build()).entity(created).build();
@@ -99,10 +105,16 @@ public class HttpAddressSpaceService {
     public Response replaceAddressSpace(@Context SecurityContext securityContext, @PathParam("namespace") String namespace, @NotNull  AddressSpace input) throws Exception {
         return doRequest("Error replacing address space " + input.getName(), () -> {
             verifyAuthorized(securityContext, namespace, ResourceVerb.update);
+            AddressSpace addressSpace = input;
+            if (addressSpace.getNamespace() == null) {
+                addressSpace = new AddressSpace.Builder(addressSpace)
+                        .setNamespace(namespace)
+                        .build();
+            }
             AddressSpaceResolver addressSpaceResolver = new AddressSpaceResolver(schemaProvider.getSchema());
-            addressSpaceResolver.validate(input);
-            addressSpaceApi.replaceAddressSpace(input);
-            AddressSpace replaced = addressSpaceApi.getAddressSpaceWithName(namespace, input.getName()).orElse(input);
+            addressSpaceResolver.validate(addressSpace);
+            addressSpaceApi.replaceAddressSpace(addressSpace);
+            AddressSpace replaced = addressSpaceApi.getAddressSpaceWithName(namespace, addressSpace.getName()).orElse(addressSpace);
             return Response.ok().entity(replaced).build();
         });
     }
