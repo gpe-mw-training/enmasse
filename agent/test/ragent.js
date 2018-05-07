@@ -711,11 +711,13 @@ function fill(n, f) {
 
 describe('cooperating ragent group', function() {
     this.timeout(5000);
-    var counter = 0;
-    var groups = fill(4, function (i) { return new RouterGroup('ragent-' + (i+1)); });
+    var counter;
+    var groups;
     var podserver;
 
     beforeEach(function(done) {
+        counter = 0;
+        groups = fill(4, function (i) { return new RouterGroup('ragent-' + (i+1)); });
         podserver = new ResourceServer('Pod', true);
         Promise.all(groups.map(function (g) { return g.listen(); })).then(function (){
             podserver.listen(0).on('listening', function () {

@@ -135,15 +135,19 @@ module.exports.serialize = function (f) {
     var in_progress = false;
     var pending = 0;
     function execute() {
-        f().then(function () {
-            if (pending) {
-                next();
-            } else {
+        try {
+            f().then(function () {
+                if (pending) {
+                    next();
+                } else {
+                    in_progress = false;
+                }
+            }).catch(function(error) {
                 in_progress = false;
-            }
-        }).catch(function() {
+            });
+        } catch (error) {
             in_progress = false;
-        });
+        }
     }
     function next() {
         pending--;
