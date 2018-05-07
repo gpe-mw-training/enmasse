@@ -192,9 +192,9 @@ function desired_address_config(high_level_address_definitions) {
         var def = high_level_address_definitions[i];
         if (def.type === 'queue') {
             config.add_address({prefix:def.address, distribution:'balanced', waypoint:true});
-            config.add_autolink_pair({addr:def.address, containerId: /*def.allocated_to ||*/ def.address});
+            config.add_autolink_pair({addr:def.address, containerId: def.allocated_to || def.address});
         } else if (def.type === 'topic') {
-            config.add_linkroute_pair({prefix:def.address, containerId: /*def.allocated_to ||*/ def.address});
+            config.add_linkroute_pair({prefix:def.address, containerId: def.allocated_to || def.address});
         } else if (def.type === 'anycast') {
             config.add_address({prefix:def.address, distribution:'balanced', waypoint:false});
         } else if (def.type === 'multicast') {
