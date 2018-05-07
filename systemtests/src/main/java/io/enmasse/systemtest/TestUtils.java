@@ -221,7 +221,7 @@ public class TestUtils {
      * @throws Exception
      */
     public static void deploy(AddressApiClient apiClient, Kubernetes kubernetes, TimeoutBudget budget, AddressSpace addressSpace, HttpMethod httpMethod, Destination... destinations) throws Exception {
-        apiClient.deploy(addressSpace, httpMethod, destinations);
+        apiClient.setAddresses(addressSpace, destinations);
         JsonObject addrSpaceObj = apiClient.getAddressSpace(addressSpace.getName());
         if (getAddressSpaceType(addrSpaceObj).equals("standard")) {
             if (destinations.length == 0) {
