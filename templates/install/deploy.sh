@@ -15,8 +15,6 @@
 # further it will use the user `developer` and project `myproject`, asking
 # for a login when appropriate.
 # for further parameters please see the help text.
-set -x
-
 SCRIPTDIR=`dirname $0`
 RESOURCE_DIR=${SCRIPTDIR}/resources
 TEMPLATE_NAME=enmasse

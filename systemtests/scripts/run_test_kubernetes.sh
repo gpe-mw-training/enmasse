@@ -42,6 +42,8 @@ echo "process for syncing docker logs is running with PID: ${LOGS_PID}"
 #execute test
 run_test ${TESTCASE} systemtests || failure=$(($failure + 1))
 
+kubectl get events --all-namespaces
+
 #stop docker logging
 echo "process for syncing docker logs with PID: ${LOGS_PID} will be killed"
 kill ${LOGS_PID}
