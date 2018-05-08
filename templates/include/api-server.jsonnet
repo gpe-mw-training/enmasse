@@ -9,9 +9,6 @@ local images = import "images.jsonnet";
       "labels": {
         "app": "enmasse",
         "component": "api-server"
-      },
-      "annotations": {
-        "service.alpha.openshift.io/serving-cert-secret-name": "api-server-cert"
       }
     },
     "spec": {
