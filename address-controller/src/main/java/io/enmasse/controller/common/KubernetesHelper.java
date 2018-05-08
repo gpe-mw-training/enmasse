@@ -152,6 +152,7 @@ public class KubernetesHelper implements Kubernetes {
         if (client.isAdaptable(OpenShiftClient.class)) {
             try {
                 ImpersonatorInterceptor.setImpersonateUser(impersonateUser);
+                client.configMaps().inNamespace(namespace).withName(namespaceInfo.getConfigName()).delete();
                 client.inNamespace(namespace).projects().withName(namespaceInfo.getNamespace()).delete();
             } finally {
                 ImpersonatorInterceptor.setImpersonateUser(null);
